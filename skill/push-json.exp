@@ -1,0 +1,19 @@
+#!/usr/bin/env expect -f
+# Push JSON to claw:/home/liangzhu/huawei-reports/data/. Usage: push-json.exp <local_path>
+# Reads password from $CLAW_PASSWORD env var.
+set timeout 60
+set local [lindex $argv 0]
+set password $env(CLAW_PASSWORD)
+
+spawn ssh -o StrictHostKeyChecking=accept-new claw "mkdir -p /home/liangzhu/huawei-reports/data"
+expect {
+    -re "(?i)password:" { send "$password\r"; exp_continue }
+    -re "yes/no" { send "yes\r"; exp_continue }
+    eof
+}
+
+spawn scp -o StrictHostKeyChecking=accept-new $local claw:/home/liangzhu/huawei-reports/data/
+expect {
+    -re "(?i)password:" { send "$password\r"; exp_continue }
+    eof
+}

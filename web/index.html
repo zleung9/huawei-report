@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>华为服务器周报 · OpenClaw</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a1f2a;
+      --border: #2a3142;
+      --text: #e6e6e6;
+      --muted: #8b95a8;
+      --accent: #4a9eff;
+      --accent-soft: #1e3a5f;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .container { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
+    header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
+    h1 { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 14px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 12px;
+      font-size: 12px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    section { margin-bottom: 40px; }
+    h2 { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+    }
+    .empty {
+      color: var(--muted);
+      font-size: 14px;
+      padding: 24px;
+      text-align: center;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+    }
+    ul.report-list { list-style: none; }
+    ul.report-list li {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    ul.report-list li:last-child { border-bottom: none; }
+    ul.report-list a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    ul.report-list a:hover { text-decoration: underline; }
+    .meta { color: var(--muted); font-size: 13px; }
+    footer {
+      margin-top: 64px; padding-top: 24px;
+      border-top: 1px solid var(--border);
+      color: var(--muted); font-size: 12px; text-align: center;
+    }
+    code {
+      background: var(--accent-soft); color: var(--accent);
+      padding: 2px 6px; border-radius: 4px;
+      font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px;
+    }
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .stat {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 16px;
+    }
+    .stat .label { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+    .stat .value { font-size: 22px; font-weight: 600; color: var(--accent); }
+    .chart-wrap { position: relative; height: 380px; }
+    .leaderboard { margin-top: 16px; }
+    .leaderboard table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .leaderboard th, .leaderboard td {
+      padding: 8px 12px; text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .leaderboard th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .leaderboard td:nth-child(2), .leaderboard th:nth-child(2) { text-align: right; font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>华为服务器周报<span class="badge">OpenClaw</span></h1>
+      <p class="subtitle">由 OpenClaw 智能体每周自动生成 · 包含资源使用、大模型调用量等指标</p>
+    </header>
+
+    <section>
+      <h2>HPC 集群核时使用 (10.26.15.51)</h2>
+      <div class="card">
+        <div class="stat-row" id="stat-row">
+          <div class="stat"><div class="label">时间窗口</div><div class="value" id="stat-range">–</div></div>
+          <div class="stat"><div class="label">总核时</div><div class="value" id="stat-total">–</div></div>
+          <div class="stat"><div class="label">活跃用户</div><div class="value" id="stat-users">–</div></div>
+          <div class="stat"><div class="label">数据更新</div><div class="value" id="stat-updated" style="font-size:14px">–</div></div>
+        </div>
+        <div class="chart-wrap"><canvas id="slurm-chart"></canvas></div>
+        <div class="leaderboard">
+          <table>
+            <thead><tr><th>用户</th><th>累计核时</th></tr></thead>
+            <tbody id="leaderboard-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>历史归档</h2>
+      <div class="card">
+        <ul class="report-list" id="archive-list">
+          <li class="meta">归档列表会在第一份报告生成后自动出现。也可以直接访问 <code>/archive/</code> 浏览所有文件。</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>
+      Powered by OpenClaw · Hosted on Huawei Server · Port 18788
+    </footer>
+  </div>
+
+  <script>
+    const PALETTE = [
+      '#4a9eff', '#ff6b6b', '#51cf66', '#ffd43b', '#cc5de8',
+      '#22b8cf', '#ff922b', '#845ef7', '#94d82d', '#f783ac',
+      '#fab005', '#15aabf'
+    ];
+
+    async function loadSlurm() {
+      try {
+        const res = await fetch('data/slurm_daily.json?t=' + Date.now());
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        renderStats(data);
+        renderChart(data);
+        renderLeaderboard(data);
+      } catch (err) {
+        document.getElementById('stat-range').textContent = '暂无数据';
+        document.getElementById('stat-total').textContent = '–';
+        document.getElementById('stat-users').textContent = '–';
+        document.getElementById('stat-updated').textContent = '运行 skill huawei-report-update 后再刷新';
+        console.error('load slurm failed:', err);
+      }
+    }
+
+    function renderStats(d) {
+      document.getElementById('stat-range').textContent = `${d.range.start} → ${d.range.end}`;
+      const total = d.totals_per_day.reduce((a,b)=>a+b, 0);
+      document.getElementById('stat-total').textContent = total.toFixed(1);
+      document.getElementById('stat-users').textContent = d.users.length;
+      const ts = new Date(d.generated_at);
+      document.getElementById('stat-updated').textContent = ts.toLocaleString('zh-CN', { hour12: false });
+    }
+
+    function renderChart(d) {
+      const ctx = document.getElementById('slurm-chart').getContext('2d');
+      const datasets = d.users.map((u, i) => ({
+        label: u,
+        data: d.core_hours[u],
+        backgroundColor: PALETTE[i % PALETTE.length],
+        borderWidth: 0,
+      }));
+      new Chart(ctx, {
+        type: 'bar',
+        data: { labels: d.dates, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#e6e6e6', boxWidth: 12, padding: 8, font: { size: 11 } } },
+            tooltip: { mode: 'index', intersect: false, callbacks: {
+              label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} 核时`
+            } },
+          },
+          scales: {
+            x: {
+              stacked: true,
+              ticks: { color: '#8b95a8', maxRotation: 45, minRotation: 45, font: { size: 10 } },
+              grid: { color: '#2a3142' },
+            },
+            y: {
+              stacked: true,
+              ticks: { color: '#8b95a8', callback: (v) => v.toLocaleString() },
+              grid: { color: '#2a3142' },
+              title: { display: true, text: '核时 (CPU·hour)', color: '#8b95a8' },
+            },
+          },
+        },
+      });
+    }
+
+    function renderLeaderboard(d) {
+      const rows = Object.entries(d.totals_per_user)
+        .sort((a, b) => b[1] - a[1]);
+      const body = document.getElementById('leaderboard-body');
+      body.innerHTML = rows.map(([u, h]) => `<tr><td>${u}</td><td>${h.toLocaleString(undefined, {maximumFractionDigits:1})}</td></tr>`).join('');
+    }
+
+    loadSlurm();
+  </script>
+</body>
+</html>

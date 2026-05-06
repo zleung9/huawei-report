@@ -1,0 +1,14 @@
+#!/usr/bin/env expect -f
+# Pull sacct records from hpc. Usage: pull-sacct.exp <days> <output_file>
+# Reads password from $HPC_PASSWORD env var.
+set timeout 120
+set days [lindex $argv 0]
+set out [lindex $argv 1]
+set password $env(HPC_PASSWORD)
+
+spawn bash -c "ssh -o StrictHostKeyChecking=accept-new hpc \"sacct -aX --starttime=now-${days}days --format=User,Account,JobID,State,CPUTimeRAW,Start,End,AllocCPUS,Elapsed -P\" > $out"
+expect {
+    -re "(?i)password:" { send "$password\r"; exp_continue }
+    -re "yes/no" { send "yes\r"; exp_continue }
+    eof
+}

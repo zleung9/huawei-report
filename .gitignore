@@ -1,0 +1,22 @@
+# Local secrets
+secrets.env
+.env
+.env.local
+*.secrets
+
+# Build / scratch artifacts
+*.tgz
+*.tar.gz
+sacct_raw.tsv
+slurm_daily.json
+
+# Editor / OS
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
