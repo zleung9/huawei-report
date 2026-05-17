@@ -6,6 +6,7 @@ set -euo pipefail
 
 REPORTS_DIR="/home/liangzhu/huawei-reports"
 WEB_SRC="/home/liangzhu/huawei-reports-web"
+DB_DIR="/home/liangzhu/huawei-db"
 BUNDLE="/tmp/deploy-bundle.tgz"
 CONTAINER="huawei-reports-web"
 IMAGE="huawei-reports-web:latest"
@@ -13,9 +14,10 @@ IMAGE="huawei-reports-web:latest"
 : "${HPC_PASSWORD:?HPC_PASSWORD must be set in the env when running this script}"
 UPDATE_CRON="${UPDATE_CRON:-0 3 * * *}"
 DAYS="${DAYS:-30}"
+BACKFILL_DAYS="${BACKFILL_DAYS:-180}"
 
 echo "==> Preparing directories"
-mkdir -p "$REPORTS_DIR/archive" "$REPORTS_DIR/data" "$WEB_SRC"
+mkdir -p "$REPORTS_DIR/archive" "$REPORTS_DIR/data" "$WEB_SRC" "$DB_DIR/backups"
 
 echo "==> Extracting bundle"
 if [ -f "$BUNDLE" ]; then
@@ -46,7 +48,9 @@ docker run -d \
   -e HPC_PASSWORD="$HPC_PASSWORD" \
   -e UPDATE_CRON="$UPDATE_CRON" \
   -e DAYS="$DAYS" \
+  -e BACKFILL_DAYS="$BACKFILL_DAYS" \
   -v "$REPORTS_DIR":/usr/share/nginx/html \
+  -v "$DB_DIR":/opt/db-data \
   -v "$WEB_SRC/nginx.conf":/etc/nginx/conf.d/default.conf:ro \
   "$IMAGE"
 
@@ -63,4 +67,6 @@ curl -sI http://localhost:18788/ | head -3 || true
 echo
 
 echo "==> Done. http://10.26.15.53:18788"
-echo "    Inspect update log: docker exec $CONTAINER tail -f /var/log/update/update.log"
+echo "    Inspect update log:   docker exec $CONTAINER tail -f /var/log/update/update.log"
+echo "    Inspect backfill log: docker exec $CONTAINER tail -f /var/log/update/backfill.log"
+echo "    Query DB:             sqlite3 $DB_DIR/usage.sqlite"

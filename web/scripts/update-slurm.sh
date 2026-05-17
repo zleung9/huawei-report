@@ -1,6 +1,8 @@
 #!/bin/sh
-# Pull sacct from HPC, aggregate, atomic-write to OUT_DIR/slurm_daily.json.
-# Env: HPC_HOST, HPC_USER, HPC_PASSWORD, DAYS, OUT_DIR.
+# Pull sacct from HPC, aggregate, atomic-write to OUT_DIR/slurm_daily.json,
+# and UPSERT into hpc_daily in $DB_PATH (best-effort; failure is logged but
+# does not break the JSON output).
+# Env: HPC_HOST, HPC_USER, HPC_PASSWORD, DAYS, OUT_DIR, DB_PATH.
 set -eu
 
 : "${HPC_HOST:?HPC_HOST required}"
@@ -8,6 +10,7 @@ set -eu
 : "${HPC_PASSWORD:?HPC_PASSWORD required}"
 : "${DAYS:=30}"
 : "${OUT_DIR:=/usr/share/nginx/html/data}"
+: "${DB_PATH:=/opt/db-data/usage.sqlite}"
 
 mkdir -p "$OUT_DIR"
 RAW=$(mktemp)
@@ -32,3 +35,15 @@ TMP="${OUT_DIR}/slurm_daily.json.tmp"
 python3 /opt/update/collect_slurm.py "$RAW" "$DAYS" "$TMP"
 mv -f "$TMP" "${OUT_DIR}/slurm_daily.json"
 echo "[$(ts)] wrote ${OUT_DIR}/slurm_daily.json"
+
+# UPSERT recent window into hpc_daily (best-effort). The DB must already
+# exist (run db/backfill_hpc.sh once after first deploy).
+if [ -f "$DB_PATH" ]; then
+    if python3 /opt/dbtools/aggregate_hpc.py "$RAW" "$DAYS" "$DB_PATH"; then
+        echo "[$(ts)] hpc_daily upsert ok"
+    else
+        echo "[$(ts)] WARN: hpc_daily upsert failed (continuing)"
+    fi
+else
+    echo "[$(ts)] WARN: $DB_PATH not found; skipping DB upsert (run backfill_hpc.sh once to create it)"
+fi
