@@ -24,7 +24,7 @@ if [ -f "$BUNDLE" ]; then
   rm -rf "$WEB_SRC"/*
   tar xzf "$BUNDLE" -C "$WEB_SRC"
   # HTML pages live in the reports dir (served at /), not the build context.
-  for html in index.html apply.html; do
+  for html in index.html apply.html detail.html; do
     if [ -f "$WEB_SRC/$html" ]; then
       mv -f "$WEB_SRC/$html" "$REPORTS_DIR/$html"
     fi

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>华为服务器周报 · OpenClaw</title>
+  <title>HPC 用户用量详情 · 华为服务器</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
   <style>
     :root {
@@ -27,16 +27,6 @@
     header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
     h1 { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
     .subtitle { color: var(--muted); font-size: 14px; }
-    .badge {
-      display: inline-block;
-      padding: 2px 10px;
-      background: var(--accent-soft);
-      color: var(--accent);
-      border-radius: 12px;
-      font-size: 12px;
-      margin-left: 8px;
-      vertical-align: middle;
-    }
     section { margin-bottom: 40px; }
     h2 { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
     .card {
@@ -53,25 +43,10 @@
       border: 1px dashed var(--border);
       border-radius: 8px;
     }
-    ul.report-list { list-style: none; }
-    ul.report-list li {
-      padding: 14px 0;
-      border-bottom: 1px solid var(--border);
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    ul.report-list li:last-child { border-bottom: none; }
-    ul.report-list a { color: var(--accent); text-decoration: none; font-weight: 500; }
-    ul.report-list a:hover { text-decoration: underline; }
-    .meta { color: var(--muted); font-size: 13px; }
     footer {
       margin-top: 64px; padding-top: 24px;
       border-top: 1px solid var(--border);
       color: var(--muted); font-size: 12px; text-align: center;
-    }
-    code {
-      background: var(--accent-soft); color: var(--accent);
-      padding: 2px 6px; border-radius: 4px;
-      font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px;
     }
     .stat-row {
       display: grid;
@@ -95,15 +70,14 @@
       border-bottom: 1px solid var(--border);
     }
     .leaderboard th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .leaderboard td:nth-child(2), .leaderboard th:nth-child(2) { text-align: right; font-variant-numeric: tabular-nums; }
+    .leaderboard td:nth-child(2), .leaderboard td:nth-child(3), .leaderboard th:nth-child(2), .leaderboard th:nth-child(3) { text-align: right; font-variant-numeric: tabular-nums; }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>华为服务器周报<span class="badge">OpenClaw</span></h1>
-      <p class="subtitle">由 OpenClaw 智能体每周自动生成 · 包含资源使用、大模型调用量等指标</p>
-      <p style="margin-top: 14px;"><a href="apply.html" style="color: var(--accent); text-decoration: none; font-size: 14px;">→ 申请 API Key</a></p>
+      <h1>HPC 用户用量详情</h1>
+      <p class="subtitle">按用户统计核时用量 · 管理员视图</p>
     </header>
 
     <section>
@@ -116,15 +90,12 @@
           <div class="stat"><div class="label">数据更新</div><div class="value" id="stat-updated" style="font-size:14px">–</div></div>
         </div>
         <div class="chart-wrap"><canvas id="slurm-chart"></canvas></div>
-      </div>
-    </section>
-
-    <section>
-      <h2>历史归档</h2>
-      <div class="card">
-        <ul class="report-list" id="archive-list">
-          <li class="meta">归档列表会在第一份报告生成后自动出现。也可以直接访问 <code>/archive/</code> 浏览所有文件。</li>
-        </ul>
+        <div class="leaderboard">
+          <table>
+            <thead><tr><th>用户</th><th>累计核时</th><th>占比</th></tr></thead>
+            <tbody id="leaderboard-body"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -134,6 +105,12 @@
   </div>
 
   <script>
+    const PALETTE = [
+      '#4a9eff', '#ff6b6b', '#51cf66', '#ffd43b', '#cc5de8',
+      '#22b8cf', '#ff922b', '#845ef7', '#94d82d', '#f783ac',
+      '#fab005', '#15aabf'
+    ];
+
     async function loadSlurm() {
       try {
         const res = await fetch('data/slurm_daily.json?t=' + Date.now());
@@ -141,6 +118,7 @@
         const data = await res.json();
         renderStats(data);
         renderChart(data);
+        renderLeaderboard(data);
       } catch (err) {
         document.getElementById('stat-range').textContent = '暂无数据';
         document.getElementById('stat-total').textContent = '–';
@@ -161,32 +139,32 @@
 
     function renderChart(d) {
       const ctx = document.getElementById('slurm-chart').getContext('2d');
+      const datasets = d.users.map((u, i) => ({
+        label: u,
+        data: d.core_hours[u],
+        backgroundColor: PALETTE[i % PALETTE.length],
+        borderWidth: 0,
+      }));
       new Chart(ctx, {
         type: 'bar',
-        data: {
-          labels: d.dates,
-          datasets: [{
-            label: '每日总核时',
-            data: d.totals_per_day,
-            backgroundColor: '#4a9eff',
-            borderRadius: 2,
-          }],
-        },
+        data: { labels: d.dates, datasets },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false },
+            legend: { position: 'bottom', labels: { color: '#e6e6e6', boxWidth: 12, padding: 8, font: { size: 11 } } },
             tooltip: { mode: 'index', intersect: false, callbacks: {
-              label: (ctx) => `${ctx.parsed.y.toFixed(1)} 核时`
+              label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} 核时`
             } },
           },
           scales: {
             x: {
+              stacked: true,
               ticks: { color: '#8b95a8', maxRotation: 45, minRotation: 45, font: { size: 10 } },
               grid: { color: '#2a3142' },
             },
             y: {
+              stacked: true,
               ticks: { color: '#8b95a8', callback: (v) => v.toLocaleString() },
               grid: { color: '#2a3142' },
               title: { display: true, text: '核时 (CPU·hour)', color: '#8b95a8' },
@@ -194,6 +172,17 @@
           },
         },
       });
+    }
+
+    function renderLeaderboard(d) {
+      const total = d.totals_per_day.reduce((a,b)=>a+b, 0);
+      const rows = Object.entries(d.totals_per_user)
+        .sort((a, b) => b[1] - a[1]);
+      const body = document.getElementById('leaderboard-body');
+      body.innerHTML = rows.map(([u, h]) => {
+        const pct = total > 0 ? (h / total * 100).toFixed(1) : '0.0';
+        return `<tr><td>${u}</td><td>${h.toLocaleString(undefined, {maximumFractionDigits:1})}</td><td>${pct}%</td></tr>`;
+      }).join('');
     }
 
     loadSlurm();
