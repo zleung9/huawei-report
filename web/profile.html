@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的账号 · 华为服务器</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a1f2a;
+      --border: #2a3142;
+      --text: #e6e6e6;
+      --muted: #8b95a8;
+      --accent: #4a9eff;
+      --accent-soft: #1e3a5f;
+      --success: #51cf66;
+      --warning: #ffd43b;
+      --danger: #ff6b6b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 48px 24px; }
+    header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px;
+    }
+    h1 { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+    .subtitle { color: var(--muted); font-size: 13px; }
+    .user-info { text-align: right; font-size: 14px; }
+    .user-info .name { font-weight: 600; }
+    .user-info .role { color: var(--muted); font-size: 12px; }
+    .header-actions { display: flex; gap: 12px; margin-top: 8px; }
+    .btn {
+      padding: 6px 16px; border-radius: 6px; font-size: 13px;
+      cursor: pointer; border: 1px solid var(--border); background: var(--panel);
+      color: var(--text); text-decoration: none; transition: border-color 0.15s;
+    }
+    .btn:hover { border-color: var(--accent); }
+    .btn.danger { color: var(--danger); border-color: var(--danger); }
+    section { margin-bottom: 36px; }
+    h2 { font-size: 17px; font-weight: 600; margin-bottom: 14px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+    }
+    .info-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .info-item .label { color: var(--muted); font-size: 12px; margin-bottom: 2px; }
+    .info-item .value { font-size: 15px; font-weight: 500; }
+    .account-list { list-style: none; }
+    .account-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .account-item:last-child { border-bottom: none; }
+    .account-left { display: flex; align-items: center; gap: 12px; }
+    .system-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 4px;
+      font-size: 12px; font-weight: 600; text-transform: uppercase;
+    }
+    .system-badge.hpc { background: rgba(74,158,255,0.15); color: var(--accent); }
+    .system-badge.npu { background: rgba(81,207,102,0.15); color: var(--success); }
+    .system-badge.llm { background: rgba(255,212,59,0.15); color: var(--warning); }
+    .account-name { font-size: 15px; font-weight: 500; }
+    .account-meta { color: var(--muted); font-size: 12px; }
+    .status-badge {
+      padding: 2px 10px; border-radius: 12px; font-size: 12px;
+    }
+    .status-badge.active { background: rgba(81,207,102,0.1); color: var(--success); }
+    .status-badge.pending { background: rgba(255,212,59,0.1); color: var(--warning); }
+    table.usage-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    table.usage-table th, table.usage-table td {
+      padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border);
+    }
+    table.usage-table th { color: var(--muted); font-weight: 500; font-size: 12px; }
+    table.usage-table td:nth-child(3),
+    table.usage-table td:nth-child(4) { text-align: right; font-variant-numeric: tabular-nums; }
+    .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 24px; }
+    .stat-row {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px; margin-bottom: 16px;
+    }
+    .stat { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; }
+    .stat .label { color: var(--muted); font-size: 11px; margin-bottom: 2px; }
+    .stat .value { font-size: 18px; font-weight: 600; color: var(--accent); }
+    footer {
+      margin-top: 64px; padding-top: 24px;
+      border-top: 1px solid var(--border);
+      color: var(--muted); font-size: 12px; text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>我的账号</h1>
+        <p class="subtitle">华为服务器资源管理平台</p>
+      </div>
+      <div class="user-info">
+        <div class="name" id="user-name">–</div>
+        <div class="role" id="user-role">–</div>
+        <div class="header-actions">
+          <a href="index.html" class="btn">首页</a>
+          <button class="btn danger" id="logout-btn">退出登录</button>
+        </div>
+      </div>
+    </header>
+
+    <section>
+      <h2>个人信息</h2>
+      <div class="card">
+        <div class="info-grid" id="info-grid">
+          <div class="info-item"><div class="label">姓名</div><div class="value" id="info-name">–</div></div>
+          <div class="info-item"><div class="label">邮箱</div><div class="value" id="info-email">–</div></div>
+          <div class="info-item"><div class="label">研究组</div><div class="value" id="info-group">–</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>关联账号</h2>
+      <div class="card">
+        <ul class="account-list" id="account-list">
+          <li class="empty">暂无关联账号</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="hpc-section" style="display:none">
+      <h2>HPC 用量（近 30 天）</h2>
+      <div class="card">
+        <div class="stat-row" id="hpc-stats"></div>
+        <table class="usage-table" id="hpc-table">
+          <thead>
+            <tr><th>日期</th><th>账号</th><th>核时</th><th>作业数</th></tr>
+          </thead>
+          <tbody id="hpc-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>Powered by OpenClaw · Hosted on Huawei Server · Port 18788</footer>
+  </div>
+
+  <script>
+    // Auth check
+    let currentUser = null;
+
+    async function loadProfile() {
+      try {
+        const res = await fetch('/api/auth/profile');
+        if (!res.ok) {
+          window.location.replace('/login.html');
+          return;
+        }
+        const data = await res.json();
+        if (!data.ok) {
+          window.location.replace('/login.html');
+          return;
+        }
+        currentUser = data.user;
+        renderProfile(data);
+      } catch (err) {
+        window.location.replace('/login.html');
+      }
+    }
+
+    function renderProfile(data) {
+      const u = data.user;
+      document.getElementById('user-name').textContent = u.name;
+      document.getElementById('user-role').textContent = u.role === 'admin' ? '管理员' : '普通用户';
+      document.getElementById('info-name').textContent = u.name;
+      document.getElementById('info-email').textContent = u.email;
+      document.getElementById('info-group').textContent = u.group || '未分组';
+
+      // Accounts
+      const list = document.getElementById('account-list');
+      if (data.accounts && data.accounts.length > 0) {
+        list.innerHTML = '';
+        data.accounts.forEach(a => {
+          const li = document.createElement('li');
+          li.className = 'account-item';
+          const status = a.status === 'pending_review' ? 'pending' : 'active';
+          const statusText = a.status === 'pending_review' ? '待审核' : '已激活';
+          const displayName = a.system === 'llm' && a.account_name.endsWith(':pending')
+            ? '待分配' : a.account_name;
+          li.innerHTML = `
+            <div class="account-left">
+              <span class="system-badge ${a.system}">${a.system}</span>
+              <div>
+                <div class="account-name">${displayName}</div>
+                <div class="account-meta">创建于 ${a.created_at || '–'}</div>
+              </div>
+            </div>
+            <span class="status-badge ${status}">${statusText}</span>
+          `;
+          list.appendChild(li);
+        });
+      }
+
+      // HPC usage
+      if (data.hpc_usage && data.hpc_usage.length > 0) {
+        document.getElementById('hpc-section').style.display = '';
+        const totalHours = data.hpc_usage.reduce((s, r) => s + r.core_hours, 0);
+        const totalJobs = data.hpc_usage.reduce((s, r) => s + r.job_count, 0);
+        document.getElementById('hpc-stats').innerHTML = `
+          <div class="stat"><div class="label">总核时</div><div class="value">${totalHours.toFixed(1)}</div></div>
+          <div class="stat"><div class="label">总作业数</div><div class="value">${totalJobs}</div></div>
+          <div class="stat"><div class="label">记录天数</div><div class="value">${data.hpc_usage.length}</div></div>
+        `;
+        const tbody = document.getElementById('hpc-tbody');
+        data.hpc_usage.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${r.date}</td><td>${r.account_name}</td>
+            <td>${r.core_hours.toFixed(1)}</td><td>${r.job_count}</td>`;
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    // Logout
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.replace('/login.html');
+    });
+
+    loadProfile();
+  </script>
+</body>
+</html>

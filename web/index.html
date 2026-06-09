@@ -24,7 +24,22 @@
       min-height: 100vh;
     }
     .container { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
-    header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
+    header {
+      border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .header-right { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+    .header-right .user-name { color: var(--text); font-weight: 500; }
+    .header-right .guest-links a { color: var(--accent); text-decoration: none; margin-left: 12px; }
+    .header-right .guest-links a:hover { text-decoration: underline; }
+    .btn-sm {
+      padding: 4px 14px; border-radius: 6px; font-size: 13px; cursor: pointer;
+      border: 1px solid var(--border); background: var(--panel); color: var(--text);
+      text-decoration: none; transition: border-color 0.15s;
+    }
+    .btn-sm:hover { border-color: var(--accent); }
+    .btn-sm.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-sm.accent:hover { opacity: 0.9; }
     h1 { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
     .subtitle { color: var(--muted); font-size: 14px; }
     .badge {
@@ -101,9 +116,14 @@
 <body>
   <div class="container">
     <header>
-      <h1>华为服务器周报<span class="badge">OpenClaw</span></h1>
-      <p class="subtitle">由 OpenClaw 智能体每周自动生成 · 包含资源使用、大模型调用量等指标</p>
-      <p style="margin-top: 14px;"><a href="apply.html" style="color: var(--accent); text-decoration: none; font-size: 14px;">→ 申请 API Key</a></p>
+      <div>
+        <h1>华为服务器周报<span class="badge">OpenClaw</span></h1>
+        <p class="subtitle">由 OpenClaw 智能体每周自动生成 · 包含资源使用、大模型调用量等指标</p>
+        <p style="margin-top: 14px;"><a href="apply.html" style="color: var(--accent); text-decoration: none; font-size: 14px;">→ 申请 API Key</a></p>
+      </div>
+      <div class="header-right" id="auth-area">
+        <!-- filled by JS -->
+      </div>
     </header>
 
     <section>
@@ -134,6 +154,37 @@
   </div>
 
   <script>
+    // Auth check — show login/profile in header
+    (async () => {
+      const area = document.getElementById('auth-area');
+      try {
+        const r = await fetch('/api/auth/check');
+        if (r.ok) {
+          const data = await r.json();
+          if (data.ok && data.user) {
+            area.innerHTML = `
+              <span class="user-name">${data.user.name}</span>
+              <a href="profile.html" class="btn-sm">我的账号</a>
+              <button class="btn-sm" onclick="logout()">退出</button>
+            `;
+          }
+        }
+      } catch (e) { /* not logged in */ }
+      if (!area.innerHTML) {
+        area.innerHTML = `
+          <div class="guest-links">
+            <a href="login.html">登录</a>
+            <a href="register.html">注册</a>
+          </div>
+        `;
+      }
+    })();
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      location.reload();
+    }
+
     async function loadSlurm() {
       try {
         const res = await fetch('data/slurm_daily.json?t=' + Date.now());

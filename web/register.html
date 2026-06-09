@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>注册 · 华为服务器</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a1f2a;
+      --border: #2a3142;
+      --text: #e6e6e6;
+      --muted: #8b95a8;
+      --accent: #4a9eff;
+      --accent-soft: #1e3a5f;
+      --danger: #ff6b6b;
+      --success: #51cf66;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex; align-items: flex-start; justify-content: center;
+      padding: 48px 16px;
+    }
+    .register-box {
+      width: 100%; max-width: 560px;
+      padding: 36px 40px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; text-align: center; }
+    .subtitle { color: var(--muted); font-size: 13px; text-align: center; margin-bottom: 28px; }
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .field label { font-size: 13px; font-weight: 500; color: var(--muted); }
+    .field label .req { color: var(--danger); }
+    .field .hint { color: var(--muted); font-size: 12px; }
+    input[type=text], input[type=email], input[type=password] {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus { border-color: var(--accent); }
+    .section-title {
+      font-size: 14px; font-weight: 600; color: var(--accent);
+      margin-top: 20px; margin-bottom: 12px;
+      padding-bottom: 6px; border-bottom: 1px solid var(--border);
+    }
+    .checkbox-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 12px; font-size: 14px;
+    }
+    .checkbox-row input { accent-color: var(--accent); }
+    .account-field {
+      display: none;
+      margin-left: 28px; margin-bottom: 14px;
+    }
+    .account-field.show { display: flex; flex-direction: column; gap: 6px; }
+    .account-field label { font-size: 12px; color: var(--muted); }
+    button.submit {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: 0;
+      border-radius: 6px;
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 12px;
+      transition: opacity 0.15s;
+    }
+    button.submit:hover { opacity: 0.9; }
+    button.submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .alert {
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .alert.show { display: block; }
+    .alert.error { background: rgba(255,107,107,0.1); border: 1px solid var(--danger); color: var(--danger); }
+    .alert.success { background: rgba(81,207,102,0.1); border: 1px solid var(--success); color: var(--success); }
+    .links { display: flex; justify-content: center; gap: 16px; margin-top: 20px; }
+    .links a { color: var(--muted); text-decoration: none; font-size: 13px; }
+    .links a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="register-box">
+    <h1>注册账号</h1>
+    <p class="subtitle">华为服务器资源管理平台</p>
+
+    <div class="alert" id="alert"></div>
+
+    <form id="register-form">
+      <div class="field">
+        <label for="name">姓名 <span class="req">*</span></label>
+        <input type="text" id="name" name="name" required maxlength="100" autocomplete="name">
+      </div>
+
+      <div class="field">
+        <label for="email">邮箱 <span class="req">*</span></label>
+        <input type="email" id="email" name="email" required maxlength="200" autocomplete="email">
+        <span class="hint">用于接收通知和账号信息</span>
+      </div>
+
+      <div class="field">
+        <label for="username">用户名 <span class="req">*</span></label>
+        <input type="text" id="username" name="username" required maxlength="32" autocomplete="username" pattern="[a-z0-9_]{3,32}">
+        <span class="hint">3-32 位小写字母、数字或下划线</span>
+      </div>
+
+      <div class="field">
+        <label for="password">密码 <span class="req">*</span></label>
+        <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password">
+        <span class="hint">至少 8 位</span>
+      </div>
+
+      <div class="field">
+        <label for="group">研究组 / 单位</label>
+        <input type="text" id="group" name="group" maxlength="200" placeholder="如：嘉庚创新实验室 XX 团队（可选）">
+      </div>
+
+      <div class="section-title">申请计算资源账号</div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="req_hpc" name="request_hpc">
+        <label for="req_hpc">HPC 集群账号（10.26.15.51）</label>
+      </div>
+      <div class="account-field" id="hpc-field">
+        <label for="hpc_account">希望使用的 HPC 账号名 <span class="req">*</span></label>
+        <input type="text" id="hpc_account" name="hpc_account" maxlength="64" placeholder="如：zhangsan">
+        <span class="hint">Slurm 登录用户名，注册后即可使用</span>
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="req_npu" name="request_npu">
+        <label for="req_npu">NPU 集群账号</label>
+      </div>
+      <div class="account-field" id="npu-field">
+        <label for="npu_account">希望使用的 NPU 账号名 <span class="req">*</span></label>
+        <input type="text" id="npu_account" name="npu_account" maxlength="64" placeholder="如：zhangsan_npu">
+        <span class="hint">NPU 集群登录用户名，注册后即可使用</span>
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="req_llm" name="request_llm">
+        <label for="req_llm">大模型 API Key（需审核）</label>
+      </div>
+      <div class="account-field" id="llm-field">
+        <label for="llm_note">用途说明</label>
+        <input type="text" id="llm_note" name="llm_note" maxlength="200" placeholder="如：学术研究、代码生成等">
+        <span class="hint">管理员审核通过后下发 API Key</span>
+      </div>
+
+      <button type="submit" class="submit" id="submit-btn">注 册</button>
+    </form>
+
+    <div class="links">
+      <a href="login.html">已有账号？登录</a>
+      <a href="./">返回首页</a>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('register-form');
+    const alertEl = document.getElementById('alert');
+    const btn = document.getElementById('submit-btn');
+
+    // Toggle account fields visibility
+    document.getElementById('req_hpc').addEventListener('change', function() {
+      document.getElementById('hpc-field').classList.toggle('show', this.checked);
+    });
+    document.getElementById('req_npu').addEventListener('change', function() {
+      document.getElementById('npu-field').classList.toggle('show', this.checked);
+    });
+    document.getElementById('req_llm').addEventListener('change', function() {
+      document.getElementById('llm-field').classList.toggle('show', this.checked);
+    });
+
+    function showAlert(type, msg) {
+      alertEl.className = 'alert show ' + type;
+      alertEl.textContent = msg;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Redirect if already logged in
+    (async () => {
+      try {
+        const r = await fetch('/api/auth/check');
+        if (r.ok) { window.location.replace('/profile.html'); }
+      } catch (e) { /* not logged in, stay */ }
+    })();
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertEl.className = 'alert';
+      btn.disabled = true;
+      btn.textContent = '注册中…';
+
+      const payload = {
+        name: document.getElementById('name').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        username: document.getElementById('username').value.trim().toLowerCase(),
+        password: document.getElementById('password').value,
+        group: document.getElementById('group').value.trim(),
+        request_hpc: document.getElementById('req_hpc').checked,
+        request_npu: document.getElementById('req_npu').checked,
+        request_llm: document.getElementById('req_llm').checked,
+        hpc_account: document.getElementById('hpc_account').value.trim(),
+        npu_account: document.getElementById('npu_account').value.trim(),
+        llm_note: document.getElementById('llm_note').value.trim(),
+      };
+
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok) {
+          let msg = '✅ 注册成功！';
+          if (data.accounts && data.accounts.length > 0) {
+            const acctMsg = data.accounts.map(a => {
+              if (a.status === 'pending_review') return `${a.system.toUpperCase()}: 等待管理员审核`;
+              return `${a.system.toUpperCase()}: ${a.account_name}`;
+            }).join('；');
+            msg += ' ' + acctMsg;
+          }
+          showAlert('success', msg);
+          form.reset();
+          // Hide account fields
+          document.querySelectorAll('.account-field').forEach(el => el.classList.remove('show'));
+          // Auto-redirect to login after 3s
+          setTimeout(() => { window.location.href = 'login.html'; }, 3000);
+        } else {
+          showAlert('error', '❌ ' + (data.error || '注册失败'));
+        }
+      } catch (err) {
+        showAlert('error', '❌ 网络错误：' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '注 册';
+      }
+    });
+  </script>
+</body>
+</html>

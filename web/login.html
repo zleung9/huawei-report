@@ -73,12 +73,14 @@
     .alert.error { background: rgba(255,107,107,0.1); border: 1px solid var(--danger); color: var(--danger); }
     .back-link { display: block; text-align: center; margin-top: 24px; color: var(--muted); text-decoration: none; font-size: 13px; }
     .back-link:hover { color: var(--text); }
+    .register-link { display: block; text-align: center; margin-top: 12px; color: var(--accent); text-decoration: none; font-size: 14px; }
+    .register-link:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
   <div class="login-box">
-    <h1>管理员登录</h1>
-    <p class="subtitle">华为服务器用量管理系统</p>
+    <h1>用户登录</h1>
+    <p class="subtitle">华为服务器资源管理平台</p>
 
     <div class="alert" id="alert"></div>
 
@@ -94,6 +96,7 @@
       <button type="submit" class="submit" id="submit-btn">登 录</button>
     </form>
 
+    <a href="register.html" class="register-link">没有账号？注册</a>
     <a href="./" class="back-link">← 返回首页</a>
   </div>
 
@@ -106,7 +109,7 @@
     (async () => {
       try {
         const r = await fetch('/api/auth/check');
-        if (r.ok) { window.location.replace('/detail.html'); }
+        if (r.ok) { window.location.replace('/profile.html'); }
       } catch (e) { /* not logged in, stay */ }
     })();
 
@@ -132,7 +135,7 @@
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.ok) {
-          window.location.replace('/detail.html');
+          window.location.replace('/profile.html');
         } else {
           showAlert(data.error || '登录失败');
         }
