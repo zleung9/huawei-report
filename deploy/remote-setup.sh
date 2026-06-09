@@ -12,6 +12,8 @@ CONTAINER="huawei-reports-web"
 IMAGE="huawei-reports-web:latest"
 
 : "${HPC_PASSWORD:?HPC_PASSWORD must be set in the env when running this script}"
+: "${ADMIN_EMAIL:?ADMIN_EMAIL must be set in the env when running this script}"
+: "${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set in the env when running this script}"
 UPDATE_CRON="${UPDATE_CRON:-0 3 * * *}"
 DAYS="${DAYS:-30}"
 BACKFILL_DAYS="${BACKFILL_DAYS:-180}"
@@ -24,7 +26,7 @@ if [ -f "$BUNDLE" ]; then
   rm -rf "$WEB_SRC"/*
   tar xzf "$BUNDLE" -C "$WEB_SRC"
   # HTML pages live in the reports dir (served at /), not the build context.
-  for html in index.html apply.html detail.html; do
+  for html in index.html apply.html detail.html login.html; do
     if [ -f "$WEB_SRC/$html" ]; then
       mv -f "$WEB_SRC/$html" "$REPORTS_DIR/$html"
     fi
@@ -46,6 +48,8 @@ docker run -d \
   --restart unless-stopped \
   --network host \
   -e HPC_PASSWORD="$HPC_PASSWORD" \
+  -e ADMIN_EMAIL="$ADMIN_EMAIL" \
+  -e ADMIN_PASSWORD="$ADMIN_PASSWORD" \
   -e UPDATE_CRON="$UPDATE_CRON" \
   -e DAYS="$DAYS" \
   -e BACKFILL_DAYS="$BACKFILL_DAYS" \

@@ -1,4 +1,4 @@
--- usage.sqlite schema v1 (2026-05-17)
+-- usage.sqlite schema v2 (2026-05-26)
 -- See REQUIREMENTS.md §4 for design rationale.
 
 PRAGMA foreign_keys = ON;
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS hpc_daily (
 CREATE INDEX IF NOT EXISTS idx_hpc_daily_date ON hpc_daily(date);
 CREATE INDEX IF NOT EXISTS idx_hpc_daily_account ON hpc_daily(account_name);
 
--- Future tables (commented out; uncomment + ALTER schema_version when adding):
+-- Future tables (uncomment + ALTER schema_version when adding):
 --
 -- CREATE TABLE npu_daily (
 --     date TEXT NOT NULL,
@@ -86,37 +86,40 @@ CREATE INDEX IF NOT EXISTS idx_hpc_daily_account ON hpc_daily(account_name);
 --     updated_at TEXT NOT NULL,
 --     PRIMARY KEY (date, account_name, model)
 -- );
---
--- CREATE TABLE auth_user (
---     id INTEGER PRIMARY KEY,
---     person_id INTEGER NOT NULL REFERENCES person(id),
---     username TEXT NOT NULL UNIQUE,
---     password_hash TEXT NOT NULL,        -- bcrypt
---     must_change_password INTEGER NOT NULL DEFAULT 0,
---     failed_attempts INTEGER NOT NULL DEFAULT 0,
---     locked_until TEXT,
---     last_login_at TEXT,
---     created_at TEXT NOT NULL
--- );
---
--- CREATE TABLE auth_session (
---     token TEXT PRIMARY KEY,
---     person_id INTEGER NOT NULL REFERENCES person(id),
---     created_at TEXT NOT NULL,
---     expires_at TEXT NOT NULL,
---     ip TEXT,
---     user_agent TEXT
--- );
---
--- CREATE TABLE audit_log (
---     id INTEGER PRIMARY KEY,
---     ts TEXT NOT NULL,
---     person_id INTEGER REFERENCES person(id),
---     action TEXT NOT NULL,
---     target TEXT,
---     detail_json TEXT,
---     ip TEXT
--- );
+
+-- Auth tables (v2)
+CREATE TABLE IF NOT EXISTS auth_user (
+    id INTEGER PRIMARY KEY,
+    person_id INTEGER NOT NULL REFERENCES person(id),
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,            -- PBKDF2-SHA256
+    must_change_password INTEGER NOT NULL DEFAULT 0,
+    failed_attempts INTEGER NOT NULL DEFAULT 0,
+    locked_until TEXT,
+    last_login_at TEXT,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS auth_session (
+    token TEXT PRIMARY KEY,
+    person_id INTEGER NOT NULL REFERENCES person(id),
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    ip TEXT,
+    user_agent TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_auth_session_person ON auth_session(person_id);
+
+CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY,
+    ts TEXT NOT NULL,
+    person_id INTEGER REFERENCES person(id),
+    action TEXT NOT NULL,
+    target TEXT,
+    detail_json TEXT,
+    ip TEXT
+);
 
 INSERT OR IGNORE INTO schema_version (version, applied_at)
-VALUES (1, datetime('now'));
+VALUES (2, datetime('now'));

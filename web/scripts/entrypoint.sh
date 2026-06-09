@@ -31,12 +31,20 @@ fi
 echo "==> initial update (best-effort)"
 /opt/update/update-slurm.sh >> "$LOG" 2>&1 || echo "initial update failed (check $LOG); nginx will start anyway" >&2
 
-echo "==> starting apikey submission server (127.0.0.1:18789)"
+echo "==> bootstrapping admin account"
+python3 /opt/dbtools/admin_bootstrap.py >> /var/log/update/auth.log 2>&1 \
+    || echo "WARN: admin bootstrap failed (check auth.log); continuing" >&2
+
+echo "==> starting apikey submission server (127.0.0.1:28789)"
 python3 /opt/update/apikey_server.py >> /var/log/update/apikey.log 2>&1 &
+
+echo "==> starting auth server (127.0.0.1:28790)"
+python3 /opt/update/auth_server.py >> /var/log/update/auth.log 2>&1 &
 
 touch /var/log/update/backfill.log
 # Stream logs to container stdout so `docker logs` shows them.
-tail -F "$LOG" /var/log/update/crond.log /var/log/update/apikey.log /var/log/update/backfill.log >&2 &
+touch /var/log/update/auth.log
+tail -F "$LOG" /var/log/update/crond.log /var/log/update/apikey.log /var/log/update/backfill.log /var/log/update/auth.log >&2 &
 
 echo "==> starting nginx"
 exec nginx -g 'daemon off;'

@@ -76,8 +76,13 @@
 <body>
   <div class="container">
     <header>
-      <h1>HPC 用户用量详情</h1>
-      <p class="subtitle">按用户统计核时用量 · 管理员视图</p>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <h1>HPC 用户用量详情</h1>
+          <p class="subtitle">按用户统计核时用量 · 管理员视图 · <span id="user-name">…</span></p>
+        </div>
+        <button id="logout-btn" style="background: var(--panel); color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 6px 16px; cursor: pointer; font-size: 13px;">退出登录</button>
+      </div>
     </header>
 
     <section>
@@ -105,6 +110,25 @@
   </div>
 
   <script>
+    // Auth check — redirect to login if not authenticated
+    async function checkAuth() {
+      try {
+        const r = await fetch('/api/auth/check');
+        if (!r.ok) { window.location.replace('/login.html'); return null; }
+        const data = await r.json();
+        document.getElementById('user-name').textContent = data.user.name + ' (' + data.user.role + ')';
+        return data.user;
+      } catch (e) {
+        window.location.replace('/login.html');
+        return null;
+      }
+    }
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.replace('/login.html');
+    });
+
     const PALETTE = [
       '#4a9eff', '#ff6b6b', '#51cf66', '#ffd43b', '#cc5de8',
       '#22b8cf', '#ff922b', '#845ef7', '#94d82d', '#f783ac',
@@ -185,7 +209,10 @@
       }).join('');
     }
 
-    loadSlurm();
+    (async () => {
+      const user = await checkAuth();
+      if (user) loadSlurm();
+    })();
   </script>
 </body>
 </html>

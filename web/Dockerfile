@@ -14,6 +14,7 @@ WORKDIR /opt/update
 COPY scripts/collect_slurm.py /opt/update/collect_slurm.py
 COPY scripts/update-slurm.sh  /opt/update/update-slurm.sh
 COPY scripts/apikey_server.py /opt/update/apikey_server.py
+COPY scripts/auth_server.py   /opt/update/auth_server.py
 COPY scripts/entrypoint.sh    /entrypoint.sh
 COPY crontab                  /etc/crontabs/root
 
@@ -24,9 +25,11 @@ COPY db/schema.sql            /opt/dbtools/schema.sql
 COPY db/init_db.py            /opt/dbtools/init_db.py
 COPY db/aggregate_hpc.py      /opt/dbtools/aggregate_hpc.py
 COPY db/backfill_hpc.sh       /opt/dbtools/backfill_hpc.sh
+COPY db/admin_bootstrap.py    /opt/dbtools/admin_bootstrap.py
 
 RUN chmod +x /opt/update/update-slurm.sh /entrypoint.sh \
             /opt/dbtools/init_db.py /opt/dbtools/aggregate_hpc.py /opt/dbtools/backfill_hpc.sh \
+            /opt/dbtools/admin_bootstrap.py \
  && mkdir -p /var/log/update /opt/db-data
 
 ENV HPC_HOST=172.16.12.2 \
