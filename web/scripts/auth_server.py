@@ -10,6 +10,7 @@ import os
 import re
 import secrets
 import sqlite3
+import string
 import sys
 import time
 from datetime import datetime, timezone
@@ -26,6 +27,20 @@ LOCK_MINUTES = 15
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+def generate_password(length: int = 12) -> str:
+    """Generate a random password: letters + digits, guaranteed 1 of each."""
+    alpha = string.ascii_letters
+    digits = string.digits
+    pool = alpha + digits
+    while True:
+        pw = "".join(secrets.choice(pool) for _ in range(length))
+        if any(c in alpha for c in pw) and any(c in digits for c in pw):
+            return pw
+
+def generate_api_key(prefix: str = "sk") -> str:
+    """Generate an API key like sk-xxxxxxxxxxxxxxxxxxxxxxxx."""
+    return f"{prefix}-{secrets.token_hex(24)}"
 
 def hash_password(password: str) -> str:
     salt = secrets.token_hex(16)
@@ -311,12 +326,13 @@ class Handler(BaseHTTPRequestHandler):
                     (hpc_account,)
                 ).fetchone():
                     return self._json(409, {"error": f"HPC 账号 '{hpc_account}' 已被占用"})
+                hpc_password = generate_password()
                 db.execute(
-                    "INSERT INTO accounts (person_id, system, account_name, created_at) "
-                    "VALUES (?, 'hpc', ?, ?)",
-                    (person_id, hpc_account, now),
+                    "INSERT INTO accounts (person_id, system, account_name, credential, created_at) "
+                    "VALUES (?, 'hpc', ?, ?, ?)",
+                    (person_id, hpc_account, hpc_password, now),
                 )
-                accounts_created.append({"system": "hpc", "account_name": hpc_account})
+                accounts_created.append({"system": "hpc", "account_name": hpc_account, "credential": hpc_password})
 
             if request_npu:
                 if db.execute(
@@ -324,26 +340,27 @@ class Handler(BaseHTTPRequestHandler):
                     (npu_account,)
                 ).fetchone():
                     return self._json(409, {"error": f"NPU 账号 '{npu_account}' 已被占用"})
+                npu_password = generate_password()
                 db.execute(
-                    "INSERT INTO accounts (person_id, system, account_name, created_at) "
-                    "VALUES (?, 'npu', ?, ?)",
-                    (person_id, npu_account, now),
+                    "INSERT INTO accounts (person_id, system, account_name, credential, created_at) "
+                    "VALUES (?, 'npu', ?, ?, ?)",
+                    (person_id, npu_account, npu_password, now),
                 )
-                accounts_created.append({"system": "npu", "account_name": npu_account})
+                accounts_created.append({"system": "npu", "account_name": npu_account, "credential": npu_password})
 
             if request_llm:
-                # API key requires admin review — create a pending request
-                api_key_name = f"llm:{username}:pending"
+                # Generate API key immediately
+                api_key = generate_api_key()
+                api_key_name = f"llm:{username}"
                 db.execute(
-                    "INSERT INTO accounts (person_id, system, account_name, created_at) "
-                    "VALUES (?, 'llm', ?, ?)",
-                    (person_id, api_key_name, now),
+                    "INSERT INTO accounts (person_id, system, account_name, credential, created_at) "
+                    "VALUES (?, 'llm', ?, ?, ?)",
+                    (person_id, api_key_name, api_key, now),
                 )
                 accounts_created.append({
                     "system": "llm",
                     "account_name": api_key_name,
-                    "status": "pending_review",
-                    "note": "等待管理员审核",
+                    "credential": api_key,
                 })
 
             # Audit
@@ -402,17 +419,22 @@ class Handler(BaseHTTPRequestHandler):
             if not person:
                 return self._json(404, {"error": "用户不存在"})
 
-            # Accounts
+            # Accounts (include credential for the user's own view)
             accts = db.execute(
-                "SELECT system, account_name, created_at FROM accounts "
+                "SELECT system, account_name, credential, created_at FROM accounts "
                 "WHERE person_id = ? ORDER BY system, account_name",
                 (person_id,),
             ).fetchall()
             accounts = []
             for a in accts:
-                entry = {"system": a["system"], "account_name": a["account_name"], "created_at": a["created_at"]}
-                # LLM pending marker
-                if a["system"] == "llm" and a["account_name"].endswith(":pending"):
+                entry = {
+                    "system": a["system"],
+                    "account_name": a["account_name"],
+                    "created_at": a["created_at"],
+                    "credential": a["credential"],
+                }
+                # LLM pending marker (old-style :pending accounts without credential)
+                if a["system"] == "llm" and not a["credential"]:
                     entry["status"] = "pending_review"
                 accounts.append(entry)
 

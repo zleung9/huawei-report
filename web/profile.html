@@ -73,6 +73,27 @@
     .system-badge.llm { background: rgba(255,212,59,0.15); color: var(--warning); }
     .account-name { font-size: 15px; font-weight: 500; }
     .account-meta { color: var(--muted); font-size: 12px; }
+    .credential-row {
+      display: flex; align-items: center; gap: 8px; margin-top: 6px;
+    }
+    .credential-label { color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .credential-value {
+      font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+      font-size: 13px; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 4px; padding: 3px 8px; user-select: all;
+      min-width: 160px; word-break: break-all;
+    }
+    .credential-value.hidden {
+      color: transparent; background: var(--border); user-select: none;
+      letter-spacing: 2px;
+    }
+    .btn-icon {
+      background: none; border: 1px solid var(--border); border-radius: 4px;
+      color: var(--muted); cursor: pointer; padding: 3px 8px; font-size: 12px;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-icon.copied { border-color: var(--success); color: var(--success); }
     .status-badge {
       padding: 2px 10px; border-radius: 12px; font-size: 12px;
     }
@@ -157,6 +178,29 @@
     // Auth check
     let currentUser = null;
 
+    function toggleCred(idx) {
+      const el = document.getElementById('cred-' + idx);
+      if (el) el.classList.toggle('hidden');
+    }
+
+    async function copyCred(idx, btn) {
+      const el = document.getElementById('cred-' + idx);
+      if (!el) return;
+      try {
+        await navigator.clipboard.writeText(el.textContent);
+        btn.classList.add('copied');
+        btn.textContent = '✓';
+        setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '📋'; }, 1500);
+      } catch (e) {
+        // Fallback: select text
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
+
     async function loadProfile() {
       try {
         const res = await fetch('/api/auth/profile');
@@ -188,19 +232,35 @@
       const list = document.getElementById('account-list');
       if (data.accounts && data.accounts.length > 0) {
         list.innerHTML = '';
-        data.accounts.forEach(a => {
+        data.accounts.forEach((a, idx) => {
           const li = document.createElement('li');
           li.className = 'account-item';
           const status = a.status === 'pending_review' ? 'pending' : 'active';
           const statusText = a.status === 'pending_review' ? '待审核' : '已激活';
           const displayName = a.system === 'llm' && a.account_name.endsWith(':pending')
             ? '待分配' : a.account_name;
+
+          // Build credential HTML
+          let credHtml = '';
+          if (a.credential) {
+            const credLabel = a.system === 'llm' ? 'API Key' : '密码';
+            credHtml = `
+              <div class="credential-row">
+                <span class="credential-label">${credLabel}:</span>
+                <span class="credential-value hidden" id="cred-${idx}">${a.credential}</span>
+                <button class="btn-icon" onclick="toggleCred(${idx})" title="显示/隐藏">👁</button>
+                <button class="btn-icon" onclick="copyCred(${idx}, this)" title="复制">📋</button>
+              </div>
+            `;
+          }
+
           li.innerHTML = `
             <div class="account-left">
               <span class="system-badge ${a.system}">${a.system}</span>
               <div>
                 <div class="account-name">${displayName}</div>
                 <div class="account-meta">创建于 ${a.created_at || '–'}</div>
+                ${credHtml}
               </div>
             </div>
             <span class="status-badge ${status}">${statusText}</span>

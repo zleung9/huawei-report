@@ -1,5 +1,5 @@
--- usage.sqlite schema v2 (2026-05-26)
--- See REQUIREMENTS.md §4 for design rationale.
+-- usage.sqlite schema v3 (2026-06-15)
+-- v3: added accounts.credential column for HPC/NPU passwords and LLM API keys
 
 PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
@@ -34,11 +34,13 @@ CREATE TABLE IF NOT EXISTS person (
 CREATE INDEX IF NOT EXISTS idx_person_group ON person(group_id);
 
 -- A person's identity on each compute system.
+-- credential stores: HPC/NPU login password, LLM API key (or NULL if pending).
 CREATE TABLE IF NOT EXISTS accounts (
     id INTEGER PRIMARY KEY,
     person_id INTEGER NOT NULL REFERENCES person(id) ON DELETE CASCADE,
     system TEXT NOT NULL CHECK(system IN ('hpc','npu','llm')),
     account_name TEXT NOT NULL,
+    credential TEXT,
     created_at TEXT NOT NULL,
     UNIQUE(system, account_name)
 );
@@ -123,3 +125,6 @@ CREATE TABLE IF NOT EXISTS audit_log (
 
 INSERT OR IGNORE INTO schema_version (version, applied_at)
 VALUES (2, datetime('now'));
+
+INSERT OR IGNORE INTO schema_version (version, applied_at)
+VALUES (3, datetime('now'));

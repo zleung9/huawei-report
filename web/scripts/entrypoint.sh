@@ -41,6 +41,10 @@ if [ ! -f "${DB_PATH:-/opt/db-data/usage.sqlite}" ]; then
         || echo "WARN: backfill failed (check backfill.log); continuing" >&2
 else
     echo "    DB already present at ${DB_PATH:-/opt/db-data/usage.sqlite}"
+    echo "==> running DB migrations"
+    python3 /opt/dbtools/migrate_v3.py "${DB_PATH:-/opt/db-data/usage.sqlite}" \
+        >> /var/log/update/auth.log 2>&1 \
+        || echo "WARN: migration failed; continuing" >&2
 fi
 
 echo "==> initial update (best-effort)"

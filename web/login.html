@@ -105,11 +105,16 @@
     const alertEl = document.getElementById('alert');
     const btn = document.getElementById('submit-btn');
 
-    // Redirect if already logged in
+    // Redirect if already logged in (role-based)
     (async () => {
       try {
         const r = await fetch('/api/auth/check');
-        if (r.ok) { window.location.replace('/profile.html'); }
+        if (r.ok) {
+          const data = await r.json();
+          if (data.ok && data.user) {
+            window.location.replace(data.user.role === 'admin' ? '/detail.html' : '/profile.html');
+          }
+        }
       } catch (e) { /* not logged in, stay */ }
     })();
 
@@ -135,7 +140,9 @@
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.ok) {
-          window.location.replace('/profile.html');
+          // Role-based redirect: admin → dashboard, user → profile
+          const role = data.user ? data.user.role : 'user';
+          window.location.replace(role === 'admin' ? '/detail.html' : '/profile.html');
         } else {
           showAlert(data.error || '登录失败');
         }

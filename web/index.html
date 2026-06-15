@@ -162,20 +162,27 @@
         if (r.ok) {
           const data = await r.json();
           if (data.ok && data.user) {
-            area.innerHTML = `
-              <span class="user-name">${data.user.name}</span>
-              <a href="profile.html" class="btn-sm">我的账号</a>
-              <button class="btn-sm" onclick="logout()">退出</button>
-            `;
+            if (data.user.role === 'admin') {
+              area.innerHTML = `
+                <span class="user-name">${data.user.name} <span style="color:var(--muted);font-size:12px">管理员</span></span>
+                <a href="detail.html" class="btn-sm">仪表盘</a>
+                <a href="profile.html" class="btn-sm">我的账号</a>
+                <button class="btn-sm" onclick="logout()">退出</button>
+              `;
+            } else {
+              area.innerHTML = `
+                <span class="user-name">${data.user.name}</span>
+                <a href="profile.html" class="btn-sm">我的账号</a>
+                <button class="btn-sm" onclick="logout()">退出</button>
+              `;
+            }
           }
         }
       } catch (e) { /* not logged in */ }
       if (!area.innerHTML) {
         area.innerHTML = `
-          <div class="guest-links">
-            <a href="login.html">登录</a>
-            <a href="register.html">注册</a>
-          </div>
+          <a href="login.html" class="btn-sm accent">登录</a>
+          <a href="register.html" class="btn-sm">注册</a>
         `;
       }
     })();
