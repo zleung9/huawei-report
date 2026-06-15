@@ -13,6 +13,21 @@ if [ -n "${UPDATE_CRON:-}" ]; then
   echo "${UPDATE_CRON} /opt/update/update-slurm.sh >> ${LOG} 2>&1" > /etc/crontabs/root
 fi
 
+echo "==> materializing web content"
+# If the image ships /opt/html (Dockerfile.migrate), copy any missing files
+# into the nginx root so the site works without host bind-mounts.
+# Existing files (e.g. data JSON) are never overwritten.
+if [ -d /opt/html ]; then
+  for f in /opt/html/*; do
+    base="$(basename "$f")"
+    [ ! -e "/usr/share/nginx/html/$base" ] && cp -a "$f" "/usr/share/nginx/html/$base"
+  done
+fi
+# Same for nginx.conf — only install if the default config is the stock one.
+if [ -f /opt/nginx/nginx.conf ] && ! grep -q '28790' /etc/nginx/conf.d/default.conf 2>/dev/null; then
+  cp /opt/nginx/nginx.conf /etc/nginx/conf.d/default.conf
+fi
+
 echo "==> crontab:"
 cat /etc/crontabs/root
 echo "==> starting crond"

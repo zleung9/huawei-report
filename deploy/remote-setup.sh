@@ -37,7 +37,11 @@ echo "==> Build context:"
 ls -la "$WEB_SRC"
 
 echo "==> Building image $IMAGE"
-docker build -t "$IMAGE" "$WEB_SRC"
+if [ -f "$WEB_SRC/Dockerfile.migrate" ]; then
+  docker build -f "$WEB_SRC/Dockerfile.migrate" -t "$IMAGE" "$WEB_SRC"
+else
+  docker build -t "$IMAGE" "$WEB_SRC"
+fi
 
 echo "==> Removing old container if present"
 docker rm -f "$CONTAINER" 2>/dev/null || true
