@@ -14,13 +14,14 @@ if [ -n "${UPDATE_CRON:-}" ]; then
 fi
 
 echo "==> materializing web content"
-# If the image ships /opt/html (Dockerfile.migrate), copy any missing files
-# into the nginx root so the site works without host bind-mounts.
-# Existing files (e.g. data JSON) are never overwritten.
+# If the image ships /opt/html (Dockerfile.migrate), copy HTML files into
+# the nginx root so the site works without host bind-mounts.
+# HTML files are always overwritten (image version is authoritative), but
+# the data/ directory and any other non-HTML content are preserved.
 if [ -d /opt/html ]; then
   for f in /opt/html/*; do
     base="$(basename "$f")"
-    [ ! -e "/usr/share/nginx/html/$base" ] && cp -a "$f" "/usr/share/nginx/html/$base"
+    cp -a "$f" "/usr/share/nginx/html/$base"
   done
 fi
 # Same for nginx.conf — only install if the default config is the stock one.
