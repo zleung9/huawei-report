@@ -1,10 +1,11 @@
 services:
   reports-web:
-    image: nginx:alpine
+    image: huawei-reports-web:latest
     container_name: huawei-reports-web
     restart: unless-stopped
-    ports:
-      - "18788:80"
+    network_mode: host
+    environment:
+      - HPC_PASSWORD=${HPC_PASSWORD:?HPC_PASSWORD must be set in .env}
     volumes:
-      - /home/liangzhu/huawei-reports:/usr/share/nginx/html:ro
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /home/liangzhu/huawei-db:/opt/db-data
+      - /home/liangzhu/huawei-reports/data:/usr/share/nginx/html/data

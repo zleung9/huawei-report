@@ -3,11 +3,21 @@
 # Unlike the standard Dockerfile (which expects HTML pages and nginx.conf to be
 # bind-mounted from the host), this variant bakes *everything* into the image so
 # that `docker save` produces a portable artifact.  On a fresh server you can
-# `docker load` and run with just one volume mount for the persistent SQLite
-# database — no extra files needed on the host.
+# `docker load` and run with just two volume mounts — one for the persistent
+# SQLite database, one for the data JSON directory (so container recreations
+# don't lose slurm_daily.json etc.).
 #
 # Build:
 #   docker build -f Dockerfile.migrate -t huawei-reports-web:latest .
+#
+# Run:
+#   docker run -d --name huawei-reports-web --network host --restart unless-stopped \
+#     -e HPC_PASSWORD=<password> \
+#     -v /home/liangzhu/huawei-db:/opt/db-data \
+#     -v /home/liangzhu/huawei-reports/data:/usr/share/nginx/html/data \
+#     huawei-reports-web:latest
+#
+# Or use docker-compose.yml with HPC_PASSWORD in .env.
 #
 # Export:
 #   docker save huawei-reports-web:latest | gzip > huawei-reports-web.tar.gz
