@@ -43,6 +43,10 @@
     }
     .btn:hover { border-color: var(--accent); }
     .btn.danger { color: var(--danger); border-color: var(--danger); }
+    .btn.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn.accent:hover { opacity: 0.9; }
+    .btn.sm { padding: 4px 12px; font-size: 12px; }
+    .btn.warn { color: var(--warning); border-color: var(--warning); }
     section { margin-bottom: 36px; }
     h2 { font-size: 17px; font-weight: 600; margin-bottom: 14px; }
     .card {
@@ -64,6 +68,7 @@
     }
     .account-item:last-child { border-bottom: none; }
     .account-left { display: flex; align-items: center; gap: 12px; }
+    .account-right { display: flex; align-items: center; gap: 8px; }
     .system-badge {
       display: inline-block; padding: 3px 10px; border-radius: 4px;
       font-size: 12px; font-weight: 600; text-transform: uppercase;
@@ -98,7 +103,33 @@
       padding: 2px 10px; border-radius: 12px; font-size: 12px;
     }
     .status-badge.active { background: rgba(81,207,102,0.1); color: var(--success); }
+    .status-badge.suspended { background: rgba(255,107,107,0.1); color: var(--danger); }
     .status-badge.pending { background: rgba(255,212,59,0.1); color: var(--warning); }
+    /* Apply account cards */
+    .apply-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .apply-card {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 18px 20px; cursor: pointer; transition: border-color 0.15s;
+    }
+    .apply-card:hover { border-color: var(--accent); }
+    .apply-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .apply-card p { color: var(--muted); font-size: 13px; }
+    .apply-card .icon { font-size: 24px; margin-bottom: 8px; }
+    .apply-form {
+      margin-top: 14px; display: none;
+    }
+    .apply-form.show { display: block; }
+    .apply-form label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+    .apply-form input[type=text] {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); padding: 8px 12px; font-size: 14px; width: 100%;
+      outline: none; margin-bottom: 10px; font-family: inherit;
+    }
+    .apply-form input:focus { border-color: var(--accent); }
+    .apply-form .hint { color: var(--muted); font-size: 12px; margin-bottom: 10px; }
     table.usage-table { width: 100%; border-collapse: collapse; font-size: 14px; }
     table.usage-table th, table.usage-table td {
       padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border);
@@ -114,6 +145,13 @@
     .stat { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; }
     .stat .label { color: var(--muted); font-size: 11px; margin-bottom: 2px; }
     .stat .value { font-size: 18px; font-weight: 600; color: var(--accent); }
+    .alert {
+      padding: 10px 14px; border-radius: 6px; font-size: 13px;
+      margin-bottom: 14px; display: none;
+    }
+    .alert.show { display: block; }
+    .alert.error { background: rgba(255,107,107,0.1); border: 1px solid var(--danger); color: var(--danger); }
+    .alert.success { background: rgba(81,207,102,0.1); border: 1px solid var(--success); color: var(--success); }
     footer {
       margin-top: 64px; padding-top: 24px;
       border-top: 1px solid var(--border);
@@ -150,6 +188,46 @@
     </section>
 
     <section>
+      <h2>申请资源账号</h2>
+      <div class="alert" id="apply-alert"></div>
+      <div class="card">
+        <div class="apply-grid" id="apply-grid">
+          <div class="apply-card" onclick="showApplyForm('hpc')">
+            <div class="icon">🖥️</div>
+            <h3>HPC 集群账号</h3>
+            <p>高性能计算集群登录账号</p>
+            <div class="apply-form" id="apply-form-hpc">
+              <label for="hpc-name">希望使用的账号名</label>
+              <input type="text" id="hpc-name" placeholder="如：zhangsan" maxlength="32">
+              <div class="hint">2-32 位小写字母、数字或下划线</div>
+              <button class="btn accent sm" onclick="applyAccount('hpc', event)">申请 HPC 账号</button>
+            </div>
+          </div>
+          <div class="apply-card" onclick="showApplyForm('npu')">
+            <div class="icon">🧠</div>
+            <h3>NPU 集群账号</h3>
+            <p>昇腾 NPU 计算集群登录账号</p>
+            <div class="apply-form" id="apply-form-npu">
+              <label for="npu-name">希望使用的账号名</label>
+              <input type="text" id="npu-name" placeholder="如：zhangsan" maxlength="32">
+              <div class="hint">2-32 位小写字母、数字或下划线</div>
+              <button class="btn accent sm" onclick="applyAccount('npu', event)">申请 NPU 账号</button>
+            </div>
+          </div>
+          <div class="apply-card" onclick="showApplyForm('llm')">
+            <div class="icon">🤖</div>
+            <h3>大模型 API Key</h3>
+            <p>大模型推理服务 API 密钥</p>
+            <div class="apply-form" id="apply-form-llm">
+              <div class="hint">点击下方按钮立即生成 API Key</div>
+              <button class="btn accent sm" onclick="applyAccount('llm', event)">生成 API Key</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
       <h2>关联账号</h2>
       <div class="card">
         <ul class="account-list" id="account-list">
@@ -175,8 +253,21 @@
   </div>
 
   <script>
-    // Auth check
     let currentUser = null;
+    let profileData = null;
+
+    function showApplyForm(system) {
+      // Toggle form visibility
+      const form = document.getElementById('apply-form-' + system);
+      if (form) form.classList.toggle('show');
+    }
+
+    function showAlert(type, msg) {
+      const el = document.getElementById('apply-alert');
+      el.className = 'alert show ' + type;
+      el.textContent = msg;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
     function toggleCred(idx) {
       const el = document.getElementById('cred-' + idx);
@@ -192,12 +283,87 @@
         btn.textContent = '✓';
         setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '📋'; }, 1500);
       } catch (e) {
-        // Fallback: select text
         const range = document.createRange();
         range.selectNodeContents(el);
         const sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(range);
+      }
+    }
+
+    async function applyAccount(system, e) {
+      e.stopPropagation();
+      let payload = { system };
+
+      if (system === 'hpc') {
+        const name = document.getElementById('hpc-name').value.trim().toLowerCase();
+        if (!name) { showAlert('error', '❌ 请输入 HPC 账号名'); return; }
+        payload.account_name = name;
+      } else if (system === 'npu') {
+        const name = document.getElementById('npu-name').value.trim().toLowerCase();
+        if (!name) { showAlert('error', '❌ 请输入 NPU 账号名'); return; }
+        payload.account_name = name;
+      }
+      // llm: no account_name needed
+
+      try {
+        const res = await fetch('/api/auth/apply-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          const acct = data.account;
+          const credType = acct.system === 'llm' ? 'API Key' : '密码';
+          showAlert('success', `✅ ${acct.system.toUpperCase()} 账号已创建！${credType}: ${acct.credential}`);
+          // Hide the apply form
+          const form = document.getElementById('apply-form-' + system);
+          if (form) form.classList.remove('show');
+          // Reload profile to reflect new account
+          loadProfile();
+        } else {
+          showAlert('error', '❌ ' + (data.error || '申请失败'));
+        }
+      } catch (err) {
+        showAlert('error', '❌ 网络错误：' + err.message);
+      }
+    }
+
+    async function suspendAccount(accountId, btn) {
+      if (!confirm('确认停用此账号？停用后您将无法使用该资源。')) return;
+      try {
+        const res = await fetch('/api/auth/suspend-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ account_id: accountId }),
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          loadProfile();
+        } else {
+          showAlert('error', '❌ ' + (data.error || '操作失败'));
+        }
+      } catch (err) {
+        showAlert('error', '❌ 网络错误：' + err.message);
+      }
+    }
+
+    async function activateAccount(accountId, btn) {
+      try {
+        const res = await fetch('/api/auth/activate-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ account_id: accountId }),
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          loadProfile();
+        } else {
+          showAlert('error', '❌ ' + (data.error || '操作失败'));
+        }
+      } catch (err) {
+        showAlert('error', '❌ 网络错误：' + err.message);
       }
     }
 
@@ -214,6 +380,7 @@
           return;
         }
         currentUser = data.user;
+        profileData = data;
         renderProfile(data);
       } catch (err) {
         window.location.replace('/login.html');
@@ -235,10 +402,11 @@
         data.accounts.forEach((a, idx) => {
           const li = document.createElement('li');
           li.className = 'account-item';
-          const status = a.status === 'pending_review' ? 'pending' : 'active';
-          const statusText = a.status === 'pending_review' ? '待审核' : '已激活';
-          const displayName = a.system === 'llm' && a.account_name.endsWith(':pending')
-            ? '待分配' : a.account_name;
+          const status = a.status || 'active';
+          const statusText = status === 'suspended' ? '已停用'
+            : status === 'pending_review' ? '待审核' : '已激活';
+          const statusClass = status === 'suspended' ? 'suspended'
+            : status === 'pending_review' ? 'pending' : 'active';
 
           // Build credential HTML
           let credHtml = '';
@@ -254,20 +422,45 @@
             `;
           }
 
+          // Build action buttons based on status
+          let actionHtml = '';
+          if (status === 'active') {
+            actionHtml = `<button class="btn warn sm" onclick="suspendAccount(${a.id}, this)">停用</button>`;
+          } else if (status === 'suspended') {
+            actionHtml = `<button class="btn accent sm" onclick="activateAccount(${a.id}, this)">启用</button>`;
+          }
+
           li.innerHTML = `
             <div class="account-left">
               <span class="system-badge ${a.system}">${a.system}</span>
               <div>
-                <div class="account-name">${displayName}</div>
+                <div class="account-name">${a.account_name}</div>
                 <div class="account-meta">创建于 ${a.created_at || '–'}</div>
                 ${credHtml}
               </div>
             </div>
-            <span class="status-badge ${status}">${statusText}</span>
+            <div class="account-right">
+              <span class="status-badge ${statusClass}">${statusText}</span>
+              ${actionHtml}
+            </div>
           `;
           list.appendChild(li);
         });
+      } else {
+        list.innerHTML = '<li class="empty">暂无关联账号，请在上方申请</li>';
       }
+
+      // Update apply-grid: hide cards for systems user already has
+      ['hpc', 'npu', 'llm'].forEach(sys => {
+        const card = document.querySelector(`#apply-grid .apply-card:nth-child(${sys === 'hpc' ? 1 : sys === 'npu' ? 2 : 3})`);
+        if (!card) return;
+        const hasAccount = data.accounts && data.accounts.some(a => a.system === sys);
+        if (hasAccount) {
+          card.style.opacity = '0.4';
+          card.style.pointerEvents = 'none';
+          card.querySelector('p').textContent += '（已有账号）';
+        }
+      });
 
       // HPC usage
       if (data.hpc_usage && data.hpc_usage.length > 0) {
@@ -280,6 +473,7 @@
           <div class="stat"><div class="label">记录天数</div><div class="value">${data.hpc_usage.length}</div></div>
         `;
         const tbody = document.getElementById('hpc-tbody');
+        tbody.innerHTML = '';
         data.hpc_usage.forEach(r => {
           const tr = document.createElement('tr');
           tr.innerHTML = `<td>${r.date}</td><td>${r.account_name}</td>

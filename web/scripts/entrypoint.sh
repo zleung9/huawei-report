@@ -45,7 +45,10 @@ else
     echo "==> running DB migrations"
     python3 /opt/dbtools/migrate_v3.py "${DB_PATH:-/opt/db-data/usage.sqlite}" \
         >> /var/log/update/auth.log 2>&1 \
-        || echo "WARN: migration failed; continuing" >&2
+        || echo "WARN: migration v3 failed; continuing" >&2
+    python3 /opt/dbtools/migrate_v4.py "${DB_PATH:-/opt/db-data/usage.sqlite}" \
+        >> /var/log/update/auth.log 2>&1 \
+        || echo "WARN: migration v4 failed; continuing" >&2
 fi
 
 echo "==> initial update (best-effort)"

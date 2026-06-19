@@ -1,5 +1,5 @@
--- usage.sqlite schema v3 (2026-06-15)
--- v3: added accounts.credential column for HPC/NPU passwords and LLM API keys
+-- usage.sqlite schema v4 (2026-06-19)
+-- v4: added accounts.status column for suspend/activate lifecycle
 
 PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS accounts (
     system TEXT NOT NULL CHECK(system IN ('hpc','npu','llm')),
     account_name TEXT NOT NULL,
     credential TEXT,
+    status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','suspended','pending_review')),
     created_at TEXT NOT NULL,
     UNIQUE(system, account_name)
 );
@@ -128,3 +129,6 @@ VALUES (2, datetime('now'));
 
 INSERT OR IGNORE INTO schema_version (version, applied_at)
 VALUES (3, datetime('now'));
+
+INSERT OR IGNORE INTO schema_version (version, applied_at)
+VALUES (4, datetime('now'));

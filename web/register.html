@@ -27,7 +27,7 @@
       padding: 48px 16px;
     }
     .register-box {
-      width: 100%; max-width: 560px;
+      width: 100%; max-width: 460px;
       padding: 36px 40px;
       background: var(--panel);
       border: 1px solid var(--border);
@@ -51,22 +51,6 @@
       transition: border-color 0.15s;
     }
     input:focus { border-color: var(--accent); }
-    .section-title {
-      font-size: 14px; font-weight: 600; color: var(--accent);
-      margin-top: 20px; margin-bottom: 12px;
-      padding-bottom: 6px; border-bottom: 1px solid var(--border);
-    }
-    .checkbox-row {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 12px; font-size: 14px;
-    }
-    .checkbox-row input { accent-color: var(--accent); }
-    .account-field {
-      display: none;
-      margin-left: 28px; margin-bottom: 14px;
-    }
-    .account-field.show { display: flex; flex-direction: column; gap: 6px; }
-    .account-field label { font-size: 12px; color: var(--muted); }
     button.submit {
       width: 100%;
       background: var(--accent);
@@ -133,38 +117,6 @@
         <input type="text" id="group" name="group" maxlength="200" placeholder="如：嘉庚创新实验室 XX 团队（可选）">
       </div>
 
-      <div class="section-title">申请计算资源账号</div>
-
-      <div class="checkbox-row">
-        <input type="checkbox" id="req_hpc" name="request_hpc">
-        <label for="req_hpc">HPC 集群账号（10.26.15.51）</label>
-      </div>
-      <div class="account-field" id="hpc-field">
-        <label for="hpc_account">希望使用的 HPC 账号名 <span class="req">*</span></label>
-        <input type="text" id="hpc_account" name="hpc_account" maxlength="64" placeholder="如：zhangsan">
-        <span class="hint">Slurm 登录用户名，注册后即可使用</span>
-      </div>
-
-      <div class="checkbox-row">
-        <input type="checkbox" id="req_npu" name="request_npu">
-        <label for="req_npu">NPU 集群账号</label>
-      </div>
-      <div class="account-field" id="npu-field">
-        <label for="npu_account">希望使用的 NPU 账号名 <span class="req">*</span></label>
-        <input type="text" id="npu_account" name="npu_account" maxlength="64" placeholder="如：zhangsan_npu">
-        <span class="hint">NPU 集群登录用户名，注册后即可使用</span>
-      </div>
-
-      <div class="checkbox-row">
-        <input type="checkbox" id="req_llm" name="request_llm">
-        <label for="req_llm">大模型 API Key（需审核）</label>
-      </div>
-      <div class="account-field" id="llm-field">
-        <label for="llm_note">用途说明</label>
-        <input type="text" id="llm_note" name="llm_note" maxlength="200" placeholder="如：学术研究、代码生成等">
-        <span class="hint">管理员审核通过后下发 API Key</span>
-      </div>
-
       <button type="submit" class="submit" id="submit-btn">注 册</button>
     </form>
 
@@ -178,17 +130,6 @@
     const form = document.getElementById('register-form');
     const alertEl = document.getElementById('alert');
     const btn = document.getElementById('submit-btn');
-
-    // Toggle account fields visibility
-    document.getElementById('req_hpc').addEventListener('change', function() {
-      document.getElementById('hpc-field').classList.toggle('show', this.checked);
-    });
-    document.getElementById('req_npu').addEventListener('change', function() {
-      document.getElementById('npu-field').classList.toggle('show', this.checked);
-    });
-    document.getElementById('req_llm').addEventListener('change', function() {
-      document.getElementById('llm-field').classList.toggle('show', this.checked);
-    });
 
     function showAlert(type, msg) {
       alertEl.className = 'alert show ' + type;
@@ -221,12 +162,6 @@
         username: document.getElementById('username').value.trim().toLowerCase(),
         password: document.getElementById('password').value,
         group: document.getElementById('group').value.trim(),
-        request_hpc: document.getElementById('req_hpc').checked,
-        request_npu: document.getElementById('req_npu').checked,
-        request_llm: document.getElementById('req_llm').checked,
-        hpc_account: document.getElementById('hpc_account').value.trim(),
-        npu_account: document.getElementById('npu_account').value.trim(),
-        llm_note: document.getElementById('llm_note').value.trim(),
       };
 
       try {
@@ -237,21 +172,8 @@
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.ok) {
-          let msg = '✅ 注册成功！';
-          if (data.accounts && data.accounts.length > 0) {
-            const acctMsg = data.accounts.map(a => {
-              if (a.status === 'pending_review') return `${a.system.toUpperCase()}: 等待管理员审核`;
-              let line = `${a.system.toUpperCase()}: ${a.account_name}`;
-              if (a.credential) line += `，密码/密钥: ${a.credential}`;
-              return line;
-            }).join('；');
-            msg += ' ' + acctMsg + '（请妥善保存，登录后可在个人页面查看）';
-          }
-          showAlert('success', msg);
+          showAlert('success', '✅ 注册成功！请登录后在个人页面申请计算资源账号');
           form.reset();
-          // Hide account fields
-          document.querySelectorAll('.account-field').forEach(el => el.classList.remove('show'));
-          // Auto-redirect to login after 3s
           setTimeout(() => { window.location.href = 'login.html'; }, 3000);
         } else {
           showAlert('error', '❌ ' + (data.error || '注册失败'));

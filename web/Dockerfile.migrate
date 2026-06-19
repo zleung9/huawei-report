@@ -43,6 +43,7 @@ COPY db/aggregate_hpc.py      /opt/dbtools/aggregate_hpc.py
 COPY db/backfill_hpc.sh       /opt/dbtools/backfill_hpc.sh
 COPY db/admin_bootstrap.py    /opt/dbtools/admin_bootstrap.py
 COPY db/migrate_v3.py         /opt/dbtools/migrate_v3.py
+COPY db/migrate_v4.py         /opt/dbtools/migrate_v4.py
 
 # ── Self-contained additions (not in standard Dockerfile) ──────────
 # Bake HTML pages and nginx.conf into the image so no host bind-mount is
@@ -56,10 +57,11 @@ COPY detail.html    /opt/html/detail.html
 COPY login.html     /opt/html/login.html
 COPY register.html  /opt/html/register.html
 COPY profile.html   /opt/html/profile.html
+COPY admin.html     /opt/html/admin.html
 COPY nginx.conf     /opt/nginx/nginx.conf
 
 RUN chmod +x /opt/update/update-slurm.sh /entrypoint.sh \
-            /opt/dbtools/init_db.py /opt/dbtools/aggregate_hpc.py /opt/dbtools/backfill_hpc.sh /opt/dbtools/admin_bootstrap.py /opt/dbtools/migrate_v3.py \
+            /opt/dbtools/init_db.py /opt/dbtools/aggregate_hpc.py /opt/dbtools/backfill_hpc.sh /opt/dbtools/admin_bootstrap.py /opt/dbtools/migrate_v3.py /opt/dbtools/migrate_v4.py \
  && mkdir -p /var/log/update /opt/db-data /usr/share/nginx/html/data
 
 ENV HPC_HOST=172.16.12.2 \

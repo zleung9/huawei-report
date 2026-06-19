@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台 · 华为服务器</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a1f2a;
+      --border: #2a3142;
+      --text: #e6e6e6;
+      --muted: #8b95a8;
+      --accent: #4a9eff;
+      --accent-soft: #1e3a5f;
+      --success: #51cf66;
+      --warning: #ffd43b;
+      --danger: #ff6b6b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .layout {
+      display: flex; min-height: 100vh;
+    }
+    /* Left panel — user list */
+    .left {
+      width: 380px; min-width: 320px;
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+    }
+    .left-header {
+      padding: 20px 20px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .left-header h1 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .left-header .nav { display: flex; gap: 10px; margin-bottom: 10px; }
+    .left-header .nav a { color: var(--muted); text-decoration: none; font-size: 13px; }
+    .left-header .nav a:hover { color: var(--text); }
+    .search-box {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); padding: 8px 12px;
+      font-size: 14px; outline: none; font-family: inherit;
+    }
+    .search-box:focus { border-color: var(--accent); }
+    .user-list {
+      flex: 1; overflow-y: auto; list-style: none;
+    }
+    .user-item {
+      padding: 12px 20px; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background 0.1s;
+    }
+    .user-item:hover { background: var(--panel); }
+    .user-item.selected { background: var(--accent-soft); border-left: 3px solid var(--accent); }
+    .user-item .name { font-weight: 500; font-size: 14px; }
+    .user-item .meta { color: var(--muted); font-size: 12px; }
+    .user-item .role-badge {
+      display: inline-block; padding: 1px 8px; border-radius: 10px;
+      font-size: 11px; font-weight: 600;
+    }
+    .role-badge.admin { background: rgba(255,212,59,0.15); color: var(--warning); }
+    .role-badge.user { background: rgba(139,149,168,0.15); color: var(--muted); }
+
+    /* Right panel — user detail */
+    .right {
+      flex: 1; overflow-y: auto; padding: 32px;
+    }
+    .right-empty {
+      display: flex; align-items: center; justify-content: center;
+      height: 100%; color: var(--muted); font-size: 15px;
+    }
+    .detail-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 28px;
+    }
+    .detail-header h2 { font-size: 20px; font-weight: 600; margin-bottom: 2px; }
+    .detail-header .subtitle { color: var(--muted); font-size: 13px; }
+    .detail-actions { display: flex; gap: 8px; }
+    section { margin-bottom: 28px; }
+    h3 { font-size: 15px; font-weight: 600; margin-bottom: 10px; color: var(--muted); }
+    .card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px 20px;
+    }
+    .info-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+    .info-item .label { color: var(--muted); font-size: 11px; margin-bottom: 1px; }
+    .info-item .value { font-size: 14px; font-weight: 500; }
+    .btn {
+      padding: 6px 16px; border-radius: 6px; font-size: 13px;
+      cursor: pointer; border: 1px solid var(--border); background: var(--panel);
+      color: var(--text); transition: border-color 0.15s;
+    }
+    .btn:hover { border-color: var(--accent); }
+    .btn.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn.accent:hover { opacity: 0.9; }
+    .btn.danger { color: var(--danger); border-color: var(--danger); }
+    .btn.warn { color: var(--warning); border-color: var(--warning); }
+    .btn.sm { padding: 4px 12px; font-size: 12px; }
+
+    /* Accounts table */
+    table.acct-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.acct-table th, table.acct-table td {
+      padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border);
+    }
+    table.acct-table th { color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; }
+    .system-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+    }
+    .system-badge.hpc { background: rgba(74,158,255,0.15); color: var(--accent); }
+    .system-badge.npu { background: rgba(81,207,102,0.15); color: var(--success); }
+    .system-badge.llm { background: rgba(255,212,59,0.15); color: var(--warning); }
+    .status-badge {
+      padding: 2px 8px; border-radius: 10px; font-size: 11px;
+    }
+    .status-badge.active { background: rgba(81,207,102,0.1); color: var(--success); }
+    .status-badge.suspended { background: rgba(255,107,107,0.1); color: var(--danger); }
+    .status-badge.pending_review { background: rgba(255,212,59,0.1); color: var(--warning); }
+    .cred-cell {
+      font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+      font-size: 12px; max-width: 200px; word-break: break-all;
+    }
+    .cred-hidden { color: transparent; background: var(--border); user-select: none; }
+
+    /* HPC usage */
+    table.usage-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.usage-table th, table.usage-table td {
+      padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border);
+    }
+    table.usage-table th { color: var(--muted); font-weight: 500; font-size: 11px; }
+    table.usage-table td:nth-child(3),
+    table.usage-table td:nth-child(4) { text-align: right; font-variant-numeric: tabular-nums; }
+
+    .alert {
+      padding: 10px 14px; border-radius: 6px; font-size: 13px;
+      margin-bottom: 14px; display: none;
+    }
+    .alert.show { display: block; }
+    .alert.error { background: rgba(255,107,107,0.1); border: 1px solid var(--danger); color: var(--danger); }
+    .alert.success { background: rgba(81,207,102,0.1); border: 1px solid var(--success); color: var(--success); }
+
+    @media (max-width: 768px) {
+      .layout { flex-direction: column; }
+      .left { width: 100%; min-width: auto; max-height: 40vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- Left: user list -->
+    <div class="left">
+      <div class="left-header">
+        <h1>管理后台</h1>
+        <div class="nav">
+          <a href="detail.html">仪表盘</a>
+          <a href="index.html">首页</a>
+          <a href="profile.html">我的账号</a>
+        </div>
+        <input type="text" class="search-box" id="search" placeholder="搜索用户名、姓名、邮箱…" oninput="filterUsers()">
+      </div>
+      <ul class="user-list" id="user-list">
+        <li style="color:var(--muted);padding:24px;text-align:center;">加载中…</li>
+      </ul>
+    </div>
+
+    <!-- Right: user detail -->
+    <div class="right" id="right-panel">
+      <div class="right-empty" id="right-empty">← 点击左侧用户查看详情</div>
+      <div id="detail-content" style="display:none">
+        <div class="alert" id="admin-alert"></div>
+
+        <div class="detail-header">
+          <div>
+            <h2 id="detail-name">–</h2>
+            <p class="subtitle" id="detail-subtitle">–</p>
+          </div>
+          <div class="detail-actions" id="detail-actions"></div>
+        </div>
+
+        <section>
+          <h3>个人信息</h3>
+          <div class="card">
+            <div class="info-grid" id="detail-info"></div>
+          </div>
+        </section>
+
+        <section>
+          <h3>资源账号</h3>
+          <div class="card">
+            <table class="acct-table">
+              <thead>
+                <tr><th>系统</th><th>账号名</th><th>凭据</th><th>状态</th><th>创建时间</th><th>操作</th></tr>
+              </thead>
+              <tbody id="detail-accts"></tbody>
+            </table>
+            <div id="no-accts" style="color:var(--muted);font-size:13px;padding:12px;text-align:center;display:none;">暂无资源账号</div>
+          </div>
+        </section>
+
+        <section id="detail-usage-section" style="display:none">
+          <h3>HPC 用量（近 30 天）</h3>
+          <div class="card">
+            <table class="usage-table">
+              <thead>
+                <tr><th>日期</th><th>账号</th><th>核时</th><th>作业数</th></tr>
+              </thead>
+              <tbody id="detail-usage"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allUsers = [];
+    let selectedUserId = null;
+    let credVisible = {};
+
+    function showAlert(type, msg) {
+      const el = document.getElementById('admin-alert');
+      el.className = 'alert show ' + type;
+      el.textContent = msg;
+    }
+
+    async function loadUsers() {
+      try {
+        const res = await fetch('/api/auth/admin/users');
+        if (!res.ok) {
+          if (res.status === 403) { window.location.replace('/profile.html'); return; }
+          if (res.status === 401) { window.location.replace('/login.html'); return; }
+          throw new Error('HTTP ' + res.status);
+        }
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error);
+        allUsers = data.users;
+        renderUserList(allUsers);
+      } catch (err) {
+        document.getElementById('user-list').innerHTML =
+          '<li style="color:var(--danger);padding:24px;text-align:center;">加载失败：' + err.message + '</li>';
+      }
+    }
+
+    function renderUserList(users) {
+      const list = document.getElementById('user-list');
+      if (users.length === 0) {
+        list.innerHTML = '<li style="color:var(--muted);padding:24px;text-align:center;">无匹配用户</li>';
+        return;
+      }
+      list.innerHTML = '';
+      users.forEach(u => {
+        const li = document.createElement('li');
+        li.className = 'user-item' + (u.id === selectedUserId ? ' selected' : '');
+        li.onclick = () => selectUser(u.id);
+        li.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div class="name">${u.name}</div>
+              <div class="meta">${u.username || '–'} · ${u.email || '–'}</div>
+            </div>
+            <span class="role-badge ${u.role}">${u.role === 'admin' ? '管理员' : '用户'}</span>
+          </div>
+          <div class="meta">${u.group || '未分组'} · ${u.account_count} 个账号 · ${u.created_at ? u.created_at.substring(0,10) : '–'}</div>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    function filterUsers() {
+      const q = document.getElementById('search').value.trim().toLowerCase();
+      if (!q) { renderUserList(allUsers); return; }
+      const filtered = allUsers.filter(u =>
+        (u.name || '').toLowerCase().includes(q) ||
+        (u.username || '').toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q) ||
+        (u.group || '').toLowerCase().includes(q)
+      );
+      renderUserList(filtered);
+    }
+
+    async function selectUser(userId) {
+      selectedUserId = userId;
+      // Re-render list to show selection
+      filterUsers();
+      // Show detail panel
+      document.getElementById('right-empty').style.display = 'none';
+      document.getElementById('detail-content').style.display = '';
+
+      try {
+        const res = await fetch('/api/auth/admin/users/' + userId);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error);
+        renderDetail(data);
+      } catch (err) {
+        showAlert('error', '加载用户详情失败：' + err.message);
+      }
+    }
+
+    function renderDetail(data) {
+      const u = data.user;
+      document.getElementById('detail-name').textContent = u.name;
+      document.getElementById('detail-subtitle').textContent =
+        (u.username || '–') + ' · ' + (u.role === 'admin' ? '管理员' : '普通用户');
+
+      // Actions
+      const actions = document.getElementById('detail-actions');
+      actions.innerHTML = '';
+      // Role toggle
+      if (u.role === 'admin') {
+        actions.innerHTML += `<button class="btn warn sm" onclick="setRole(${u.id}, 'user')">降为普通用户</button>`;
+      } else {
+        actions.innerHTML += `<button class="btn accent sm" onclick="setRole(${u.id}, 'admin')">设为管理员</button>`;
+      }
+      actions.innerHTML += `<button class="btn sm" onclick="resetPassword(${u.id})">重置密码</button>`;
+
+      // Info grid
+      document.getElementById('detail-info').innerHTML = `
+        <div class="info-item"><div class="label">ID</div><div class="value">${u.id}</div></div>
+        <div class="info-item"><div class="label">姓名</div><div class="value">${u.name}</div></div>
+        <div class="info-item"><div class="label">用户名</div><div class="value">${u.username || '–'}</div></div>
+        <div class="info-item"><div class="label">邮箱</div><div class="value">${u.email || '–'}</div></div>
+        <div class="info-item"><div class="label">研究组</div><div class="value">${u.group || '未分组'}</div></div>
+        <div class="info-item"><div class="label">角色</div><div class="value">${u.role === 'admin' ? '管理员' : '普通用户'}</div></div>
+        <div class="info-item"><div class="label">上次登录</div><div class="value">${u.last_login_at ? u.last_login_at.substring(0,16) : '从未'}</div></div>
+        <div class="info-item"><div class="label">注册时间</div><div class="value">${u.created_at ? u.created_at.substring(0,10) : '–'}</div></div>
+      `;
+
+      // Accounts
+      const tbody = document.getElementById('detail-accts');
+      const noAccts = document.getElementById('no-accts');
+      if (data.accounts && data.accounts.length > 0) {
+        noAccts.style.display = 'none';
+        tbody.innerHTML = '';
+        data.accounts.forEach(a => {
+          const tr = document.createElement('tr');
+          const statusClass = a.status || 'active';
+          const statusText = statusClass === 'suspended' ? '已停用'
+            : statusClass === 'pending_review' ? '待审核' : '已激活';
+
+          // Credential with show/hide
+          const credKey = 'cred-admin-' + a.id;
+          if (!credVisible.hasOwnProperty(a.id)) credVisible[a.id] = false;
+          const credDisplay = a.credential
+            ? (credVisible[a.id] ? a.credential : '••••••••')
+            : '–';
+
+          let actionBtns = '';
+          if (statusClass === 'active') {
+            actionBtns = `<button class="btn warn sm" onclick="adminSuspend(${a.id})">停用</button>`;
+          } else if (statusClass === 'suspended') {
+            actionBtns = `<button class="btn accent sm" onclick="adminActivate(${a.id})">启用</button>`;
+          }
+          actionBtns += ` <button class="btn sm" onclick="adminResetCred(${a.id}, '${a.system}')">重置凭据</button>`;
+
+          tr.innerHTML = `
+            <td><span class="system-badge ${a.system}">${a.system}</span></td>
+            <td>${a.account_name}</td>
+            <td class="cred-cell">
+              <span id="${credKey}" style="cursor:pointer" onclick="toggleAdminCred(${a.id})">${credDisplay}</span>
+            </td>
+            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            <td>${a.created_at ? a.created_at.substring(0,10) : '–'}</td>
+            <td>${actionBtns}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        tbody.innerHTML = '';
+        noAccts.style.display = '';
+      }
+
+      // HPC usage
+      const usageSection = document.getElementById('detail-usage-section');
+      const usageTbody = document.getElementById('detail-usage');
+      if (data.hpc_usage && data.hpc_usage.length > 0) {
+        usageSection.style.display = '';
+        usageTbody.innerHTML = '';
+        data.hpc_usage.slice(0, 50).forEach(r => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${r.date}</td><td>${r.account_name}</td>
+            <td>${r.core_hours.toFixed(1)}</td><td>${r.job_count}</td>`;
+          usageTbody.appendChild(tr);
+        });
+      } else {
+        usageSection.style.display = 'none';
+      }
+    }
+
+    function toggleAdminCred(acctId) {
+      credVisible[acctId] = !credVisible[acctId];
+      // Re-fetch detail to refresh
+      if (selectedUserId) selectUser(selectedUserId);
+    }
+
+    async function setRole(userId, role) {
+      const label = role === 'admin' ? '管理员' : '普通用户';
+      if (!confirm(`确认将此用户设为${label}？`)) return;
+      try {
+        const res = await fetch('/api/auth/admin/users/' + userId + '/set-role', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role }),
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          showAlert('success', '✅ 角色已更新');
+          loadUsers();
+          selectUser(userId);
+        } else {
+          showAlert('error', '❌ ' + (data.error || '操作失败'));
+        }
+      } catch (err) {
+        showAlert('error', '❌ 网络错误：' + err.message);
+      }
+    }
+
+    async function resetPassword(userId) {
+      if (!confirm('确认重置此用户密码？新密码将显示一次。')) return;
+      try {
+        const res = await fetch('/api/auth/admin/users/' + userId + '/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          showAlert('success', '✅ 新密码：' + data.new_password + '（请妥善保存，仅显示一次）');
+        } else {
+          showAlert('error', '❌ ' + (data.error || '操作失败'));
+        }
+      } catch (err) {
+        showAlert('error', '❌ 网络错误：' + err.message);
+      }
+    }
+
+    async function adminSuspend(acctId) {
+      if (!confirm('确认停用此账号？')) return;
+      try {
+        const res = await fetch('/api/auth/admin/accounts/' + acctId + '/suspend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          showAlert('success', '✅ 账号已停用');
+          if (selectedUserId) selectUser(selectedUserId);
+        } else {
+          showAlert('error', '❌ ' + (data.error || '操作失败'));
+        }
+      } catch (err) {
+        showAlert('error', '❌ 网络错误：' + err.message);
+      }
+    }
+
+    async function adminActivate(acctId) {
+      try {
+        const res = await fetch('/api/auth/admin/accounts/' + acctId + '/activate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          showAlert('success', '✅ 账号已启用');
+          if (selectedUserId) selectUser(selectedUserId);
+        } else {
+          showAlert('error', '❌ ' + (data.error || '操作失败'));
+        }
+      } catch (err) {
+        showAlert('error', '❌ 网络错误：' + err.message);
+      }
+    }
+
+    async function adminResetCred(acctId, system) {
+      const credType = system === 'llm' ? 'API Key' : '密码';
+      if (!confirm(`确认重置此账号的${credType}？新${credType}将显示一次。`)) return;
+      try {
+        const res = await fetch('/api/auth/admin/accounts/' + acctId + '/reset-credential', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          showAlert('success', `✅ 新${credType}：${data.credential}（请妥善保存，仅显示一次）`);
+          if (selectedUserId) selectUser(selectedUserId);
+        } else {
+          showAlert('error', '❌ ' + (data.error || '操作失败'));
+        }
+      } catch (err) {
+        showAlert('error', '❌ 网络错误：' + err.message);
+      }
+    }
+
+    // Initial load
+    loadUsers();
+  </script>
+</body>
+</html>
