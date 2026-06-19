@@ -125,7 +125,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             # Check rate limiting
             row = db.execute(
-                "SELECT id, locked_until, failed_attempts FROM auth_user WHERE username = ?",
+                "SELECT id, person_id, locked_until, failed_attempts FROM auth_user WHERE username = ?",
                 (username,),
             ).fetchone()
             if row and row["locked_until"]:
@@ -171,21 +171,21 @@ class Handler(BaseHTTPRequestHandler):
             db.execute(
                 "INSERT INTO auth_session (token, person_id, created_at, expires_at, ip) "
                 "VALUES (?, ?, ?, ?, ?)",
-                (token, row["id"], now_iso(), expires,
+                (token, row["person_id"], now_iso(), expires,
                  self.headers.get("X-Real-IP") or self.client_address[0]),
             )
             # Audit
             db.execute(
                 "INSERT INTO audit_log (ts, person_id, action, target, ip) "
                 "VALUES (?, ?, 'login', ?, ?)",
-                (now_iso(), row["id"], username,
+                (now_iso(), row["person_id"], username,
                  self.headers.get("X-Real-IP") or self.client_address[0]),
             )
             db.commit()
 
             # Fetch person info
             person = db.execute(
-                "SELECT id, name, email, role FROM person WHERE id = ?", (row["id"],)
+                "SELECT id, name, email, role FROM person WHERE id = ?", (row["person_id"],)
             ).fetchone()
         finally:
             db.close()
