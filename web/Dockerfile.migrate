@@ -17,6 +17,14 @@
 #     -v /home/liangzhu/huawei-reports/data:/usr/share/nginx/html/data \
 #     huawei-reports-web:latest
 #
+# ⚠️  SECURITY NOTE: HPC_PASSWORD currently stores a personal user password in
+#     plaintext as a container env var (visible via `docker inspect`). This is
+#     a known risk — the credential belongs to a specific user account on the
+#     HPC head node. TODO: Replace with SSH key-based auth so the password is
+#     no longer needed. When an SSH key is available, update update-slurm.sh
+#     and backfill_hpc.sh to use `ssh -i /opt/ssh/id_rsa` instead of sshpass,
+#     and mount the key file read-only instead of passing HPC_PASSWORD.
+#
 # Or use docker-compose.yml with HPC_PASSWORD in .env.
 #
 # Export:
