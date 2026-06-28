@@ -1,5 +1,6 @@
--- usage.sqlite schema v4 (2026-06-19)
--- v4: added accounts.status column for suspend/activate lifecycle
+-- usage.sqlite schema v5 (2026-06-25)
+-- v5: expanded accounts table (platform_key_id, api_key, hpc_account, npu_account)
+--     + llm_daily table for token usage per API key per model per day
 
 PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
@@ -42,6 +43,10 @@ CREATE TABLE IF NOT EXISTS accounts (
     account_name TEXT NOT NULL,
     credential TEXT,
     status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','suspended','pending_review')),
+    platform_key_id INTEGER,             -- AI Platform key ID (system='llm')
+    api_key TEXT,                         -- sk-xxx token (system='llm')
+    hpc_account TEXT,                     -- HPC cluster login (system='hpc')
+    npu_account TEXT,                     -- NPU cluster login (system='npu')
     created_at TEXT NOT NULL,
     UNIQUE(system, account_name)
 );
@@ -65,30 +70,28 @@ CREATE TABLE IF NOT EXISTS hpc_daily (
 CREATE INDEX IF NOT EXISTS idx_hpc_daily_date ON hpc_daily(date);
 CREATE INDEX IF NOT EXISTS idx_hpc_daily_account ON hpc_daily(account_name);
 
--- Future tables (uncomment + ALTER schema_version when adding):
---
--- CREATE TABLE npu_daily (
---     date TEXT NOT NULL,
---     account_name TEXT NOT NULL,
---     card_hours REAL NOT NULL DEFAULT 0,
---     job_count INTEGER NOT NULL DEFAULT 0,
---     source TEXT NOT NULL DEFAULT 'mindcluster',
---     updated_at TEXT NOT NULL,
---     PRIMARY KEY (date, account_name)
--- );
---
--- CREATE TABLE llm_daily (
---     date TEXT NOT NULL,
---     account_name TEXT NOT NULL,        -- API key id or username
---     model TEXT NOT NULL,
---     tokens_in INTEGER NOT NULL DEFAULT 0,
---     tokens_out INTEGER NOT NULL DEFAULT 0,
---     request_count INTEGER NOT NULL DEFAULT 0,
---     p95_latency_ms REAL,
---     source TEXT NOT NULL DEFAULT 'gateway',
---     updated_at TEXT NOT NULL,
---     PRIMARY KEY (date, account_name, model)
--- );
+-- LLM daily usage. Token usage per API key per model per day.
+-- api_key_id references accounts.platform_key_id at query time via JOIN,
+-- but is intentionally NOT a FK so the cron job can ingest platform keys
+-- before an admin maps them to an account.
+CREATE TABLE IF NOT EXISTS llm_daily (
+    date TEXT NOT NULL,
+    api_key_id INTEGER NOT NULL,
+    model TEXT NOT NULL,
+    input_tokens INTEGER NOT NULL DEFAULT 0,
+    output_tokens INTEGER NOT NULL DEFAULT 0,
+    input_rate REAL,
+    output_rate REAL,
+    request_count INTEGER NOT NULL DEFAULT 0,
+    success_count INTEGER NOT NULL DEFAULT 0,
+    failed_count INTEGER NOT NULL DEFAULT 0,
+    source TEXT NOT NULL DEFAULT 'gateway',
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (date, api_key_id, model)
+);
+
+CREATE INDEX IF NOT EXISTS idx_llm_daily_date ON llm_daily(date);
+CREATE INDEX IF NOT EXISTS idx_llm_daily_key ON llm_daily(api_key_id);
 
 -- Auth tables (v2)
 CREATE TABLE IF NOT EXISTS auth_user (
@@ -132,3 +135,6 @@ VALUES (3, datetime('now'));
 
 INSERT OR IGNORE INTO schema_version (version, applied_at)
 VALUES (4, datetime('now'));
+
+INSERT OR IGNORE INTO schema_version (version, applied_at)
+VALUES (5, datetime('now'));

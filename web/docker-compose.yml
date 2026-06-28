@@ -14,6 +14,7 @@ services:
     network_mode: host
     environment:
       - HPC_PASSWORD=${HPC_PASSWORD:?HPC_PASSWORD must be set in .env}
+      - LLM_API_AUTH=${LLM_API_AUTH:?LLM_API_AUTH must be set in .env}
     volumes:
       - /home/liangzhu/huawei-db:/opt/db-data
       - /home/liangzhu/huawei-reports/data:/usr/share/nginx/html/data

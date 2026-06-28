@@ -49,10 +49,21 @@ else
     python3 /opt/dbtools/migrate_v4.py "${DB_PATH:-/opt/db-data/usage.sqlite}" \
         >> /var/log/update/auth.log 2>&1 \
         || echo "WARN: migration v4 failed; continuing" >&2
+    python3 /opt/dbtools/migrate_v5.py "${DB_PATH:-/opt/db-data/usage.sqlite}" \
+        >> /var/log/update/auth.log 2>&1 \
+        || echo "WARN: migration v5 failed; continuing" >&2
 fi
 
 echo "==> initial update (best-effort)"
 /opt/update/update-slurm.sh >> "$LOG" 2>&1 || echo "initial update failed (check $LOG); nginx will start anyway" >&2
+
+if [ -n "${LLM_API_AUTH:-}" ]; then
+    echo "==> initial LLM collection (best-effort)"
+    /opt/update/update-llm.sh >> /var/log/update/llm.log 2>&1 \
+        || echo "initial LLM collection failed; continuing" >&2
+else
+    echo "==> LLM_API_AUTH not set, skipping initial LLM collection"
+fi
 
 echo "==> bootstrapping admin account"
 python3 /opt/dbtools/admin_bootstrap.py >> /var/log/update/auth.log 2>&1 \

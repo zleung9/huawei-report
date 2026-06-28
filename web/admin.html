@@ -216,6 +216,19 @@
             </table>
           </div>
         </section>
+
+        <section id="detail-llm-section" style="display:none">
+          <h3>大模型用量（近 30 天）</h3>
+          <div class="card">
+            <div class="stat-row" id="detail-llm-stats"></div>
+            <table class="usage-table">
+              <thead>
+                <tr><th>日期</th><th>Key ID</th><th>模型</th><th>输入 Token</th><th>输出 Token</th><th>请求数</th></tr>
+              </thead>
+              <tbody id="detail-llm-usage"></tbody>
+            </table>
+          </div>
+        </section>
       </div>
     </div>
   </div>
@@ -391,6 +404,32 @@
         });
       } else {
         usageSection.style.display = 'none';
+      }
+
+      // LLM usage
+      const llmSection = document.getElementById('detail-llm-section');
+      const llmTbody = document.getElementById('detail-llm-usage');
+      if (data.llm_usage && data.llm_usage.length > 0) {
+        llmSection.style.display = '';
+        const totalInput = data.llm_usage.reduce((s, r) => s + r.input_tokens, 0);
+        const totalOutput = data.llm_usage.reduce((s, r) => s + r.output_tokens, 0);
+        const totalReqs = data.llm_usage.reduce((s, r) => s + r.request_count, 0);
+        const fmtTok = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : n;
+        document.getElementById('detail-llm-stats').innerHTML = `
+          <div class="stat"><div class="label">总输入 Token</div><div class="value">${fmtTok(totalInput)}</div></div>
+          <div class="stat"><div class="label">总输出 Token</div><div class="value">${fmtTok(totalOutput)}</div></div>
+          <div class="stat"><div class="label">总请求数</div><div class="value">${totalReqs}</div></div>
+        `;
+        llmTbody.innerHTML = '';
+        data.llm_usage.slice(0, 50).forEach(r => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${r.date}</td><td>${r.api_key_id}</td>
+            <td>${r.model}</td><td>${fmtTok(r.input_tokens)}</td>
+            <td>${fmtTok(r.output_tokens)}</td><td>${r.request_count}</td>`;
+          llmTbody.appendChild(tr);
+        });
+      } else {
+        llmSection.style.display = 'none';
       }
     }
 

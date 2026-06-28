@@ -385,7 +385,7 @@ class Handler(BaseHTTPRequestHandler):
 
             # Accounts (include credential for the user's own view)
             accts = db.execute(
-                "SELECT id, system, account_name, credential, status, created_at FROM accounts "
+                "SELECT id, system, account_name, credential, status, created_at, platform_key_id FROM accounts "
                 "WHERE person_id = ? ORDER BY system, account_name",
                 (person_id,),
             ).fetchall()
@@ -421,6 +421,32 @@ class Handler(BaseHTTPRequestHandler):
                         "job_count": u["job_count"],
                     })
 
+            # LLM usage summary (last 30 days)
+            llm_key_ids = [a["platform_key_id"] for a in accts if a["system"] == "llm" and a["platform_key_id"]]
+            llm_usage = []
+            if llm_key_ids:
+                placeholders = ",".join("?" * len(llm_key_ids))
+                usage_rows = db.execute(
+                    f"SELECT date, api_key_id, model, input_tokens, output_tokens, "
+                    f"input_rate, output_rate, request_count, success_count, failed_count "
+                    f"FROM llm_daily WHERE api_key_id IN ({placeholders}) "
+                    f"AND date >= date('now', '-30 days') ORDER BY date DESC",
+                    llm_key_ids,
+                ).fetchall()
+                for u in usage_rows:
+                    llm_usage.append({
+                        "date": u["date"],
+                        "api_key_id": u["api_key_id"],
+                        "model": u["model"],
+                        "input_tokens": u["input_tokens"],
+                        "output_tokens": u["output_tokens"],
+                        "input_rate": u["input_rate"],
+                        "output_rate": u["output_rate"],
+                        "request_count": u["request_count"],
+                        "success_count": u["success_count"],
+                        "failed_count": u["failed_count"],
+                    })
+
             # Group info
             group_row = db.execute(
                 "SELECT g.name, g.is_individual FROM groups g "
@@ -439,6 +465,7 @@ class Handler(BaseHTTPRequestHandler):
                 },
                 "accounts": accounts,
                 "hpc_usage": hpc_usage,
+                "llm_usage": llm_usage,
             })
         finally:
             db.close()
@@ -500,9 +527,13 @@ class Handler(BaseHTTPRequestHandler):
                 credential = generate_password()
 
             db.execute(
-                "INSERT INTO accounts (person_id, system, account_name, credential, status, created_at) "
-                "VALUES (?, ?, ?, ?, 'active', ?)",
-                (person_id, system, account_name, credential, now),
+                "INSERT INTO accounts (person_id, system, account_name, credential, status, created_at, "
+                "hpc_account, npu_account, api_key) "
+                "VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?)",
+                (person_id, system, account_name, credential, now,
+                 account_name if system == "hpc" else None,
+                 account_name if system == "npu" else None,
+                 credential if system == "llm" else None),
             )
             acct_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
@@ -718,7 +749,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(404, {"error": "用户不存在"})
 
             accts = db.execute(
-                "SELECT id, system, account_name, credential, status, created_at "
+                "SELECT id, system, account_name, credential, status, created_at, platform_key_id "
                 "FROM accounts WHERE person_id = ? ORDER BY system, account_name",
                 (user_id,),
             ).fetchall()
@@ -736,6 +767,20 @@ class Handler(BaseHTTPRequestHandler):
                     hpc_names,
                 ).fetchall()
                 hpc_usage = [dict(u) for u in usage_rows]
+
+            # LLM usage summary (last 30 days)
+            llm_key_ids = [a["platform_key_id"] for a in accts if a["system"] == "llm" and a["platform_key_id"]]
+            llm_usage = []
+            if llm_key_ids:
+                ph = ",".join("?" * len(llm_key_ids))
+                usage_rows = db.execute(
+                    f"SELECT date, api_key_id, model, input_tokens, output_tokens, "
+                    f"input_rate, output_rate, request_count, success_count, failed_count "
+                    f"FROM llm_daily WHERE api_key_id IN ({ph}) "
+                    f"AND date >= date('now', '-30 days') ORDER BY date DESC",
+                    llm_key_ids,
+                ).fetchall()
+                llm_usage = [dict(u) for u in usage_rows]
 
         finally:
             db.close()
@@ -756,6 +801,7 @@ class Handler(BaseHTTPRequestHandler):
             },
             "accounts": accounts,
             "hpc_usage": hpc_usage,
+            "llm_usage": llm_usage,
         })
 
     # ── admin: reset password ──────────────────────────────────────

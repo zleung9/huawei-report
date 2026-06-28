@@ -1,3 +1,4 @@
 # default: daily 03:00 Asia/Shanghai (set by tzdata in Dockerfile)
 # override at runtime via -e UPDATE_CRON='*/30 * * * *' etc.
 0 3 * * * /opt/update/update-slurm.sh >> /var/log/update/update.log 2>&1
+30 3 * * * /opt/update/update-llm.sh >> /var/log/update/llm.log 2>&1
