@@ -49,7 +49,6 @@ RUN apk add --no-cache \
 WORKDIR /opt/update
 COPY scripts/collect_slurm.py /opt/update/collect_slurm.py
 COPY scripts/update-slurm.sh  /opt/update/update-slurm.sh
-COPY scripts/apikey_server.py /opt/update/apikey_server.py
 COPY scripts/auth_server.py   /opt/update/auth_server.py
 COPY scripts/entrypoint.sh    /entrypoint.sh
 COPY crontab                  /etc/crontabs/root
@@ -73,7 +72,6 @@ COPY scripts/update-llm.sh    /opt/update/update-llm.sh
 # JSON or updated HTML that a previous deployment may have written.
 
 COPY index.html     /opt/html/index.html
-COPY apply.html     /opt/html/apply.html
 COPY detail.html    /opt/html/detail.html
 COPY login.html     /opt/html/login.html
 COPY register.html  /opt/html/register.html
