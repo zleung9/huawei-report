@@ -1,9 +1,8 @@
-# ⚠️  SECURITY NOTE: HPC_PASSWORD stores a personal user password in plaintext
-#     (visible via `docker inspect`). The credential belongs to a specific user
-#     on the HPC head node. TODO: Replace with SSH key-based auth — mount the
-#     key read-only and remove HPC_PASSWORD entirely.
+# Prefer SSH key auth for HPC collection. Password auth remains as a fallback
+# for older deployments, but HPC_PASSWORD is visible via `docker inspect`.
 #
-# Copy .env.example to .env and fill in HPC_PASSWORD before running:
+# Copy .env.example to .env and fill in either HPC_SSH_KEY + HPC_SSH_KEY_SRC
+# or HPC_PASSWORD before running:
 #   docker compose up -d
 
 services:
@@ -13,8 +12,12 @@ services:
     restart: unless-stopped
     network_mode: host
     environment:
-      - HPC_PASSWORD=${HPC_PASSWORD:?HPC_PASSWORD must be set in .env}
+      # Set HPC_SSH_KEY=/opt/ssh/id_ed25519 in .env to enable key auth.
+      - HPC_SSH_KEY=${HPC_SSH_KEY:-}
+      - HPC_PASSWORD=${HPC_PASSWORD:-}
       - LLM_API_AUTH=${LLM_API_AUTH:?LLM_API_AUTH must be set in .env}
     volumes:
       - /home/liangzhu/huawei-db:/opt/db-data
       - /home/liangzhu/huawei-reports/data:/usr/share/nginx/html/data
+      # Harmless /dev/null mount unless HPC_SSH_KEY is enabled in .env.
+      - ${HPC_SSH_KEY_SRC:-/dev/null}:${HPC_SSH_KEY:-/opt/ssh/id_ed25519}:ro
